@@ -1,0 +1,15 @@
+{
+  "name": "graphlib",
+  "version": "1.0.0",
+  "description": "Professional C++ Graph Library",
+  "dependencies": [
+    {
+      "name": "gtest",
+      "version>=": "1.11.0",
+      "features": [
+        "gmock"
+      ]
+    }
+  ]
+}
+

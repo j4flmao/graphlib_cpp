@@ -1,0 +1,41 @@
+# Build directories
+build/
+build-*/
+out/
+bin/
+lib/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+Testing/
+
+# Visual Studio / MSBuild
+.vs/
+*.vcxproj.user
+*.vcxproj.filters
+*.opensdf
+*.sdf
+*.sln.docstates
+*.tlog
+*.pdb
+*.obj
+*.idb
+*.log
+*.ipch
+*.db
+
+# IDE settings
+.vscode/
+
+# OS-specific junk
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# vcpkg artifacts (installed tree usually lives outside repo, but ignore if local)
+vcpkg_installed/
+
