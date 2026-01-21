@@ -75,7 +75,7 @@ void ShortestPath::add_edge(int from, int to, long long weight) {
 
 std::vector<long long> ShortestPath::dijkstra(int source, long long inf) {
     if (source < 0 || source >= n_) {
-        return std::vector<long long>(n_, inf);
+        throw std::out_of_range("Source vertex index out of range");
     }
 
     std::vector<long long> dist(n_, inf);
@@ -120,7 +120,7 @@ std::vector<long long> ShortestPath::dijkstra(int source, long long inf) {
 
 std::vector<long long> ShortestPath::zero_one_bfs(int source, long long inf) {
     if (source < 0 || source >= n_) {
-        return std::vector<long long>(n_, inf);
+        throw std::out_of_range("Source vertex index out of range");
     }
 
     std::vector<long long> dist(n_, inf);
@@ -160,7 +160,7 @@ std::vector<long long> ShortestPath::zero_one_bfs(int source, long long inf) {
 std::vector<long long> ShortestPath::bellman_ford(int source, long long inf, bool& has_negative_cycle) {
     has_negative_cycle = false;
     if (source < 0 || source >= n_) {
-        return std::vector<long long>(n_, inf);
+        throw std::out_of_range("Source vertex index out of range");
     }
 
     std::vector<long long> dist(n_, inf);
@@ -454,9 +454,6 @@ long double ShortestPath::minimum_mean_cycle(bool& has_cycle) {
     }
 
     for (int k = 1; k <= n; k++) {
-        for (int v = 0; v < n; v++) {
-            dp[k][v] = dp[k - 1][v];
-        }
         for (int u = 0; u < n; u++) {
             if (dp[k - 1][u] == INF) {
                 continue;

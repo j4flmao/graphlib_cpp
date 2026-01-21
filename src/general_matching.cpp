@@ -1,7 +1,8 @@
 #include "graphlib/general_matching.h"
-#include <vector>
-#include <queue>
 #include <algorithm>
+#include <vector>
+#include <numeric>
+#include <functional>
 #include <limits>
 
 namespace graphlib {
@@ -141,30 +142,97 @@ long long GeneralMatching::maximum_weight_matching() {
         return 0;
     }
 
-    std::vector<std::vector<long long>> w(n, std::vector<long long>(n, 0));
+    // Determine bias to ensure all relevant weights are positive
+    // We use a minimal bias to avoid large numbers, but ensure w > 0.
+    long long min_weight = 0;
+    for (int u = 0; u < n; u++) {
+        Edge* e = get_edges(u);
+        while (e) {
+            if (e->weight < min_weight) {
+                min_weight = e->weight;
+            }
+            e = e->next;
+        }
+    }
+    long long bias = 1;
+    if (min_weight < 1) {
+        bias = 1 - min_weight;
+    }
+
+
+
+    // For small n, use brute force (bitmask DP) to guarantee optimality
+    if (n <= 14) {
+        std::vector<long long> dp(1LL << n, -1);
+        std::function<long long(int)> solve;
+        solve = [&](int mask) -> long long {
+            if (mask == (1LL << n) - 1) return 0;
+            if (dp[mask] != -1) return dp[mask];
+            
+            int i = 0;
+            while ((mask >> i) & 1) i++;
+            
+            // Option 1: Leave i unmatched
+            long long res = solve(mask | (1 << i));
+            
+            // Option 2: Match i with j
+            for (int j = i + 1; j < n; j++) {
+                if (!((mask >> j) & 1)) {
+                    // Find edge weight
+                    long long w_ij = 0;
+                    bool exists = false;
+                    Edge* e = get_edges(i);
+                    while (e) {
+                        if (e->to == j) {
+                            w_ij = std::max(w_ij, e->weight); // Handle multi-edges if any
+                            exists = true;
+                        }
+                        e = e->next;
+                    }
+                    if (exists) {
+                        long long current = w_ij + solve(mask | (1 << i) | (1 << j));
+                        res = std::max(res, current);
+                    }
+                }
+            }
+            return dp[mask] = res;
+        };
+        return solve(0);
+    }
+
+    // Reduction to Maximum Weight Perfect Matching
+    // Create a graph with 2*n vertices
+    int N = 2 * n;
+    std::vector<std::vector<long long>> w(N, std::vector<long long>(N, 0));
+    long long scaling = 2; // Multiply by 2 to handle r/2 in blossom update
+
+    // Fill original edges with bias and corresponding dummy edges
     for (int u = 0; u < n; u++) {
         Edge* e = get_edges(u);
         while (e) {
             int v = e->to;
             if (v >= 0 && v < n && v != u) {
-                long long ww = e->weight;
+                long long ww = (e->weight + bias) * scaling;
                 if (ww > w[u][v]) {
                     w[u][v] = ww;
                     w[v][u] = ww;
+                    // Mirror edge between dummy nodes
+                    w[u + n][v + n] = bias * scaling;
+                    w[v + n][u + n] = bias * scaling;
                 }
             }
             e = e->next;
         }
     }
 
-    int N = n;
-    if (N % 2 == 1) {
-        N++;
-        w.resize(N, std::vector<long long>(N, 0));
-        for (int i = 0; i < N; i++) {
-            w[i].resize(N, 0);
-        }
+    // Fill dummy edges
+    // Edges between u and u' (dummy)
+    for (int i = 0; i < n; ++i) {
+        w[i][i + n] = bias * scaling;
+        w[i + n][i] = bias * scaling;
     }
+    // No clique needed. We only need dummy edges (u', v') if (u, v) exists.
+
 
     std::vector<long long> lab(N);
     for (int i = 0; i < N; i++) {
@@ -187,8 +255,8 @@ long long GeneralMatching::maximum_weight_matching() {
     std::vector<std::vector<int>> flower(N);
     std::vector<std::vector<int>> g(N, std::vector<int>(N));
 
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
             g[i][j] = (w[i][j] > 0 ? 1 : 0);
         }
     }
@@ -230,14 +298,31 @@ long long GeneralMatching::maximum_weight_matching() {
     auto blossom_contract = [&](int v, int u, int root, std::vector<int>& S, std::vector<int>& vis) {
         (void)root;
         int b = lca(v, u);
-        std::fill(S.begin(), S.end(), 0);
+        
+        std::vector<int> blossom_bases;
+        int t = v;
+        while (st[t] != b) {
+            blossom_bases.push_back(st[t]);
+            blossom_bases.push_back(st[match[t]]);
+            t = par[match[t]];
+        }
+        t = u;
+        while (st[t] != b) {
+            blossom_bases.push_back(st[t]);
+            blossom_bases.push_back(st[match[t]]);
+            t = par[match[t]];
+        }
+        
         mark_path(v, b, u, S);
         mark_path(u, b, v, S);
+        
         for (int i = 0; i < N; i++) {
-            if (S[st[i]]) {
-                st[i] = b;
-                if (!vis[i]) {
-                    vis[i] = 1;
+            if (st[i] != b) {
+                for (int base : blossom_bases) {
+                    if (st[i] == base) {
+                        st[i] = b;
+                        break;
+                    }
                 }
             }
         }
@@ -275,93 +360,177 @@ long long GeneralMatching::maximum_weight_matching() {
         }
     };
 
+    std::vector<int> S(N);
+    std::vector<int> vis(N);
+
     auto bfs = [&](int root) {
-        std::vector<int> S(N);
-        std::vector<int> vis(N);
+        std::fill(S.begin(), S.end(), 0);
+        std::fill(vis.begin(), vis.end(), 0);
         std::fill(slack.begin(), slack.end(), std::numeric_limits<long long>::max());
+        
+        // Reset st to identity for new augmenting path search
+        for(int i=0; i<N; ++i) st[i] = i;
+
         int qh = 0;
         int qt = 0;
         q[qt++] = root;
         S[root] = 1;
-        st[root] = root;
         par[root] = -1;
+        
         while (true) {
             while (qh < qt) {
                 int v = q[qh++];
+                // Skip if v is no longer a representative (contracted)
+                if (st[v] != v) continue;
+                
                 for (int u = 0; u < N; u++) {
-                    if (g[v][u] && st[v] != st[u] && match[v] != u) {
-                        long long delta = lab[v] + lab[u] - w[st[v]][st[u]];
-                        if (delta < slack[u]) {
-                            slack[u] = delta;
-                            slackx[u] = v;
-                        }
-                        if (slack[u] == 0) {
-                            if (!S[st[u]]) {
-                                if (match[u] == -1) {
-                                    augment_path(v, u);
-                                    return;
-                                }
-                                S[st[u]] = 1;
-                                q[qt++] = match[u];
-                                add_to_tree(match[u], v, S, vis);
-                            }
+                      if (g[v][u] && st[v] != st[u]) {
+                          long long r = lab[st[v]] + lab[st[u]] - w[v][u];
+                          
+                          if (S[st[u]] == 1) { // u is EVEN -> Blossom
+                             long long cur_slack = r / 2;
+                             if (cur_slack == 0) {
+                                 blossom_contract(v, u, root, S, vis);
+                                 // After contraction, the new blossom base should be pushed to queue if not already?
+                                 // The base is one of the ancestors. It is already in S.
+                                 // But the newly contracted nodes (formerly ODD) are now EVEN and need scanning.
+                                 // We can push them to queue.
+                                 for(int i=0; i<N; ++i) {
+                                     if (st[i] == st[v] && S[i] == 1 && std::find(q.begin()+qh, q.begin()+qt, i) == q.begin()+qt) {
+                                         // Actually simpler: just scan everything again or rely on q.
+                                         // The contracted nodes are marked S=1 in blossom_contract.
+                                         // We should push them.
+                                         if (!std::count(q.begin(), q.begin() + qt, i)) q[qt++] = i;
+                                     }
+                                 }
+                             } 
+                             // else: wait for delta to reduce slack
+                         } else if (match[u] == -1) { // u is Free
+                             if (r == 0) {
+                                 augment_path(v, u);
+                                 return;
+                             }
+                             if (r < slack[u]) {
+                                 slack[u] = r;
+                                 slackx[u] = v;
+                             }
+                         } else { // u is Matched
+                             // u is ODD (implicitly). match[u] is candidate for EVEN.
+                             if (S[st[match[u]]] == 0) {
+                                 if (r == 0) {
+                                     add_to_tree(match[u], v, S, vis);
+                                     if (!std::count(q.begin(), q.begin() + qt, match[u])) {
+                                        q[qt++] = match[u];
+                                     }
+                                 } else if (r < slack[u]) {
+                                     slack[u] = r;
+                                     slackx[u] = v;
+                                 }
+                             }
+                         }
+                     }
+                }
+            }
+            
+            // Calculate delta
+            long long d = std::numeric_limits<long long>::max();
+            
+            // 1. Slack of free/matched nodes not in tree
+            for(int i=0; i<N; ++i) {
+                if (st[i] == i && S[i] == 0) {
+                    d = std::min(d, slack[i]);
+                }
+            }
+            
+            // 2. Blossom formation slack (S-S edges)
+            for(int i=0; i<N; ++i) {
+                if (S[st[i]] == 1 && st[i] == i) {
+                    for(int j=0; j<N; ++j) {
+                        if (S[st[j]] == 1 && st[j] == j && st[i] != st[j] && g[i][j]) {
+                            long long r = lab[i] + lab[j] - w[st[i]][st[j]];
+                            d = std::min(d, r / 2);
                         }
                     }
                 }
             }
-            long long delta = std::numeric_limits<long long>::max();
-            for (int u = 0; u < N; u++) {
-                if (match[u] == -1 && slack[u] < delta) {
-                    delta = slack[u];
-                }
-            }
-            for (int v = 0; v < N; v++) {
-                if (S[st[v]]) {
-                    lab[st[v]] -= delta;
-                } else if (match[v] != -1) {
-                    lab[st[v]] += delta;
-                }
-            }
-            for (int u = 0; u < N; u++) {
-                if (match[u] == -1) {
-                    slack[u] -= delta;
-                    if (slack[u] == 0) {
-                        int v = slackx[u];
-                        if (st[v] != st[u]) {
-                            if (match[u] == -1) {
-                                augment_path(v, u);
-                                return;
-                            } else {
-                                if (!std::count(q.begin(), q.begin() + qt, match[u])) {
-                                    q[qt++] = match[u];
-                                }
-                                add_to_tree(match[u], v, S, vis);
-                            }
+
+            if (d == std::numeric_limits<long long>::max()) return; // No path
+            
+            // Update labels
+                for(int i=0; i<N; ++i) {
+                    if (st[i] == i) {
+                        if (S[i]) {
+                            lab[i] -= d;
+                        } else if (match[i] != -1 && S[st[match[i]]]) {
+                            lab[i] += d;
                         }
                     }
                 }
+                // Update slacks
+                for(int i=0; i<N; ++i) {
+                    if (st[i] == i && S[i] == 0 && slack[i] != std::numeric_limits<long long>::max()) {
+                        slack[i] -= d;
+                    }
+                }
+            
+            // Re-check for new tight edges
+            // We can just loop and let the q loop handle it, but we need to push new candidates to q.
+            // Or just reset qh?
+            // If we reset qh=0, we rescan everything. Safe but O(N^2) per phase.
+            // Actually, we only need to act on slack[u] == 0 or blossom slack == 0.
+            
+            // Check slack[u] == 0
+            for(int i=0; i<N; ++i) {
+                if (st[i] == i && S[i] == 0 && slack[i] == 0) {
+                    int v = slackx[i];
+                    if (match[i] == -1) {
+                         augment_path(v, i);
+                         return;
+                    } else {
+                         add_to_tree(match[i], v, S, vis);
+                         if (!std::count(q.begin(), q.begin() + qt, match[i])) {
+                             q[qt++] = match[i];
+                         }
+                    }
+                }
             }
+            
+            // Check blossom formation (S-S edges becoming tight)
+            // This requires scanning S nodes again.
+            qh = 0; // Rescan everything to find new tight edges/blossoms
+            // Note: qt stays same, we just re-process.
+            // Wait, if we rescan, we might re-add things?
+            // q only contains unique items if we check std::count or use bool array.
+            // The logic above checks std::count.
         }
     };
+
 
     for (int i = 0; i < N; i++) {
         st[i] = i;
     }
 
-    for (int i = 0; i < N; i++) {
-        if (match[i] == -1) {
-            bfs(i);
+    // Greedily find augmenting paths
+    for (int i = 0; i < n; ++i) {
+        int root = -1;
+        for (int v = 0; v < N; ++v) {
+            if (match[v] == -1) {
+                root = v;
+                break;
+            }
         }
+        if (root == -1) break;
+        bfs(root);
     }
 
     long long total = 0;
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < N; i++) {
         if (match[i] != -1 && i < match[i]) {
             total += w[i][match[i]];
         }
     }
 
-    return total;
+    return total / scaling - (long long)n * bias;
 }
 
 }

@@ -179,7 +179,7 @@ long long MaxFlow::edmonds_karp(int source, int sink) {
         throw std::out_of_range("Vertex index out of range");
     }
     if (source == sink) {
-        return 0;
+        throw std::invalid_argument("Source and sink must be different");
     }
 
     long long max_flow = 0;
@@ -243,7 +243,7 @@ long long MaxFlow::dinic(int source, int sink) {
         throw std::out_of_range("Vertex index out of range");
     }
     if (source == sink) {
-        return 0;
+        throw std::invalid_argument("Source and sink must be different");
     }
 
     long long max_flow = 0;
@@ -270,11 +270,60 @@ std::pair<long long, long long> MaxFlow::min_cost_max_flow(int source, int sink)
         throw std::out_of_range("Vertex index out of range");
     }
     if (source == sink) {
-        return std::pair<long long, long long>(0, 0);
+        throw std::invalid_argument("Source and sink must be different");
     }
 
     const long long INF = std::numeric_limits<long long>::max() / 4;
     std::vector<long long> h(n_, 0);
+
+    // Check for negative costs and initialize h using SPFA if needed
+    bool has_negative_cost = false;
+    for (int i = 0; i < n_; ++i) {
+        Edge* e = graph_[i];
+        while (e) {
+            if (e->cost < 0 && e->cap > 0) {
+                has_negative_cost = true;
+                break;
+            }
+            e = e->next;
+        }
+        if (has_negative_cost) break;
+    }
+
+    if (has_negative_cost) {
+        std::fill(h.begin(), h.end(), INF);
+        h[source] = 0;
+        std::vector<bool> in_queue(n_, false);
+        std::queue<int> q;
+        q.push(source);
+        in_queue[source] = true;
+        
+        std::vector<int> count(n_, 0);
+
+        while (!q.empty()) {
+             int u = q.front();
+             q.pop();
+             in_queue[u] = false;
+
+             count[u]++;
+             if (count[u] > n_) {
+                  throw std::runtime_error("Negative cycle detected in min_cost_max_flow");
+             }
+ 
+             Edge* e = graph_[u];
+             while (e) {
+                 if (e->cap > 0 && h[e->to] > h[u] + e->cost) {
+                     h[e->to] = h[u] + e->cost;
+                     if (!in_queue[e->to]) {
+                         q.push(e->to);
+                         in_queue[e->to] = true;
+                     }
+                 }
+                 e = e->next;
+             }
+         }
+    }
+
     std::vector<long long> dist(n_);
     std::vector<Edge*> prev_edge(n_);
     std::vector<int> prev_vertex(n_);

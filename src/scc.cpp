@@ -194,7 +194,8 @@ int SCC::tarjan(std::vector<int>& component) {
     int current_index = 0;
     int comp_count = 0;
 
-    std::vector<int> call_stack;
+    // pair<int, int>: {u, stage}. stage=0 (visit), stage=1 (post-visit)
+    std::vector<std::pair<int, int>> call_stack;
     call_stack.reserve(n);
 
     for (int start = 0; start < n; start++) {
@@ -203,23 +204,32 @@ int SCC::tarjan(std::vector<int>& component) {
         }
 
         call_stack.clear();
-        call_stack.push_back(start);
+        call_stack.push_back({start, 0});
 
         while (!call_stack.empty()) {
-            int v = call_stack.back();
+            std::pair<int, int> top = call_stack.back();
+            call_stack.pop_back();
+            int v = top.first;
+            int stage = top.second;
 
-            if (index[v] == -1) {
+            if (stage == 0) {
+                if (index[v] != -1) {
+                    continue; // Already visited
+                }
+
                 index[v] = current_index;
                 lowlink[v] = current_index;
                 current_index++;
                 stack.push_back(v);
                 on_stack[v] = true;
 
+                call_stack.push_back({v, 1}); // Post-visit marker
+
                 Edge* e = get_edges(v);
                 while (e) {
                     int w = e->to;
                     if (index[w] == -1) {
-                        call_stack.push_back(w);
+                        call_stack.push_back({w, 0});
                     } else if (on_stack[w]) {
                         if (lowlink[v] > index[w]) {
                             lowlink[v] = index[w];
@@ -228,8 +238,7 @@ int SCC::tarjan(std::vector<int>& component) {
                     e = e->next;
                 }
             } else {
-                call_stack.pop_back();
-
+                // Post-visit logic
                 Edge* e = get_edges(v);
                 while (e) {
                     int w = e->to;
@@ -358,10 +367,10 @@ bool TwoSAT::solve(std::vector<bool>& assignment) {
         if (comp_value[c] != -1) {
             continue;
         }
-        comp_value[c] = 0;
+        comp_value[c] = 1;
         int oc = comp_opposite[c];
         if (oc >= 0 && oc < comp_count) {
-            comp_value[oc] = 1;
+            comp_value[oc] = 0;
         }
     }
 

@@ -15,9 +15,6 @@ Edge::Edge(int to, long long weight)
     : to(to), weight(weight), reverse_idx(-1), next(nullptr) {
 }
 
-Edge::~Edge() {
-}
-
 Graph::Graph(int n, bool directed)
     : n_(n), adj_(nullptr), directed_(directed) {
     if (n <= 0) {

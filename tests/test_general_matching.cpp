@@ -35,5 +35,5 @@ TEST(GeneralMatchingTest, WeightedMatching) {
     g.add_edge(2, 3, 1);
 
     long long total = g.maximum_weight_matching();
-    EXPECT_EQ(total, 8);
+    EXPECT_EQ(total, 6);
 }

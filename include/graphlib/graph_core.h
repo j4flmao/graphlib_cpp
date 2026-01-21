@@ -15,7 +15,7 @@ struct Edge {
     Edge* next;
 
     Edge(int to, long long weight = 1);
-    ~Edge();
+    ~Edge() {}
 };
 
 class GRAPHLIB_API Graph {

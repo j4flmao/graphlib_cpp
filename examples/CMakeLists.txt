@@ -28,6 +28,12 @@ target_link_libraries(example_lca PRIVATE graphlib)
 add_executable(example_twosat example_twosat.cpp)
 target_link_libraries(example_twosat PRIVATE graphlib)
 
+add_executable(example_mst example_mst.cpp)
+target_link_libraries(example_mst PRIVATE graphlib)
+
+add_executable(example_shortest_path example_shortest_path.cpp)
+target_link_libraries(example_shortest_path PRIVATE graphlib)
+
 add_custom_command(TARGET example_max_flow POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:graphlib>
@@ -49,6 +55,8 @@ foreach(exe IN ITEMS
     example_dag
     example_lca
     example_twosat
+    example_mst
+    example_shortest_path
 )
     add_custom_command(TARGET ${exe} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

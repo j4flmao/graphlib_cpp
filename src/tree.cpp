@@ -38,7 +38,7 @@ void TreeLCA::build(int root) {
 
     depth_.assign(n, 0);
     up_.assign(log_, std::vector<int>(n, -1));
-    tin_.assign(n, 0);
+    tin_.assign(n, -1);
     tout_.assign(n, 0);
     subtree_size_.assign(n, 0);
     timer_ = 0;
@@ -74,6 +74,14 @@ void TreeLCA::dfs_build(int v, int p) {
     while (e) {
         int to = e->to;
         if (to != p) {
+            if (tin_[to] != -1) {
+                // Cycle detected or already visited (not a tree)
+                // For robustness, we can ignore it (DFS tree) or throw.
+                // Given strict requirements, let's ignore it to avoid infinite loop,
+                // effectively building a DFS tree of the component.
+                e = e->next;
+                continue; 
+            }
             depth_[to] = depth_[v] + 1;
             dfs_build(to, v);
             subtree_size_[v] += subtree_size_[to];
@@ -100,7 +108,8 @@ void TreeLCA::dfs_decompose(int v, int head) {
     Edge* e = get_edges(v);
     while (e) {
         int to = e->to;
-        if (to != up_[0][v] && to != h) {
+        // Only visit children in the DFS tree
+        if (to != up_[0][v] && to != h && up_[0][to] == v) {
             dfs_decompose(to, to);
         }
         e = e->next;

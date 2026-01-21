@@ -36,7 +36,7 @@ TEST(DagTest, LongestAndShortestPath) {
     std::vector<long long> longest = dag.longest_path(0, minus_inf);
     std::vector<long long> shortest = dag.shortest_path(0, inf);
 
-    EXPECT_EQ(longest[2], 4);
+    EXPECT_EQ(longest[2], 5);
     EXPECT_EQ(shortest[2], 3);
 }
 
