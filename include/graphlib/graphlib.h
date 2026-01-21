@@ -3,7 +3,7 @@
 
 #define GRAPHLIB_VERSION_MAJOR 1
 #define GRAPHLIB_VERSION_MINOR 0
-#define GRAPHLIB_VERSION_PATCH 0
+#define GRAPHLIB_VERSION_PATCH 2
 
 #include "graphlib/export.h"
 #include "graphlib/graph_core.h"
