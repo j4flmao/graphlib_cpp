@@ -69,7 +69,8 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          # Only generate notes on one job to avoid race conditions
+          generate_release_notes: ${{ matrix.os == 'ubuntu-latest' }}
           files: |
             build/*.zip
             build/*.tar.gz
