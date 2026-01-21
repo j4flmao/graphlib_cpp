@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-set(GRAPHLIB_VERSION "1.0.2" CACHE STRING "GraphLib version")
+set(GRAPHLIB_VERSION "1.0.3" CACHE STRING "GraphLib version")
 project(GraphLib VERSION ${GRAPHLIB_VERSION} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)

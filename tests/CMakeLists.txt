@@ -76,6 +76,7 @@ add_executable(graphlib_tests
     )
 
 include(GoogleTest)
-gtest_discover_tests(graphlib_tests)
+# DISCOVERY_MODE PRE_TEST ensures tests are discovered at runtime, avoiding build-time execution issues on Windows CI
+gtest_discover_tests(graphlib_tests DISCOVERY_MODE PRE_TEST)
 
 
