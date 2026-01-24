@@ -40,21 +40,15 @@ graphlib::BipartiteGraph bg(n_left, n_right);
 
 ### 2.1 Adding Edges
 
-```cpp
-bg.add_edge(0, 0); // left 0 -> right 0
-bg.add_edge(0, 1); // left 0 -> right 1
-bg.add_edge(1, 1); // left 1 -> right 1
-```
-
-- `void add_edge(int u, int v)`:
-  - `u`: index in left part.
-  - `v`: index in right part.
+dl
+- `void add_edgint v)`:
+  - `u`: index art.
+  - `v`: index part.
 
 Use cases:
-
-- Matching workers to jobs.
-- Matching students to projects.
-
+uv
+- M sut students to projec
+v
 ---
 
 ## 3. Bipartite Check
@@ -92,19 +86,35 @@ The Hungarian algorithm solves the assignment problem:
 
 - Given an `n x n` cost matrix, find a minimum-cost perfect matching.
 
+### 5.1 Adding Weighted Edges
+
+To use the Hungarian algorithm, you must add edges with weights. Since `BipartiteGraph` inherits from `Graph`, use the standard `add_edge` with a weight parameter, respecting the index offset for the right partition.
+
+```cpp
+bg.add_edge(0, n_left + 0, 50); // left 0 -> right 0, cost 50
+bg.add_edge(0, n_left + 1, 10); // left 0 -> right 1, cost 10
+```
+
+Note: The Hungarian algorithm in this library finds the **minimum cost** perfect matching.
+
+### 5.2 Usage
+
 ```cpp
 int n = 3;
 graphlib::BipartiteGraph bg(n, n);
 
-bg.add_edge(0, 0);
-bg.add_edge(1, 1);
-bg.add_edge(2, 2);
+bg.add_edge(0, 0, 10);
+bg.add_edge(1, 1, 20);
+bg.add_edge(2, 2, 30);
 
 long long INF = 1000000000000LL;
 long long min_cost = bg.hungarian_min_cost(INF);
-```
+// Left vertices: 0, 1, 2
+// Right vertices: 3, 4, 5 (since n=3)
 
-- `long long hungarian_min_cost(long long inf)`:
+```3 // left 0 -> right 0 (3)
+4 // left 1 -> right 1 (4)
+- `long long hu5garian // left 2 -> right 2 (5)_min_cost(long long inf)`:
   - Returns the total cost of a minimum-cost perfect matching.
   - `inf` is a large value used internally to represent "no edge".
 

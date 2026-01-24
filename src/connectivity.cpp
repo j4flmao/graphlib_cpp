@@ -1,140 +1,112 @@
 #include "graphlib/connectivity.h"
 #include <vector>
 #include <algorithm>
-
-namespace {
-
-void dfs_components(graphlib::Connectivity& g, int v, int cid, std::vector<int>& comp, std::vector<bool>& visited) {
-    visited[v] = true;
-    comp[v] = cid;
-    graphlib::Edge* e = g.get_edges(v);
-    while (e) {
-        int to = e->to;
-        if (!visited[to]) {
-            dfs_components(g, to, cid, comp, visited);
-        }
-        e = e->next;
-    }
-}
-
-void dfs_bridges(graphlib::Connectivity& g, int v, int parent, std::vector<int>& tin, std::vector<int>& low, int& timer, std::vector<std::pair<int, int>>& res) {
-    tin[v] = timer;
-    low[v] = timer;
-    timer++;
-
-    graphlib::Edge* e = g.get_edges(v);
-    while (e) {
-        int to = e->to;
-        if (to == parent) {
-            e = e->next;
-            continue;
-        }
-        if (tin[to] == -1) {
-            dfs_bridges(g, to, v, tin, low, timer, res);
-            if (low[to] < low[v]) {
-                low[v] = low[to];
-            }
-            if (low[to] > tin[v]) {
-                if (v < to) {
-                    res.push_back(std::pair<int, int>(v, to));
-                } else {
-                    res.push_back(std::pair<int, int>(to, v));
-                }
-            }
-        } else if (tin[to] < low[v]) {
-            low[v] = tin[to];
-        }
-        e = e->next;
-    }
-}
-
-void dfs_articulation(graphlib::Connectivity& g, int v, int parent, std::vector<int>& tin, std::vector<int>& low, int& timer, std::vector<bool>& cut) {
-    tin[v] = timer;
-    low[v] = timer;
-    timer++;
-
-    int children = 0;
-
-    graphlib::Edge* e = g.get_edges(v);
-    while (e) {
-        int to = e->to;
-        if (to == parent) {
-            e = e->next;
-            continue;
-        }
-        if (tin[to] == -1) {
-            children++;
-            dfs_articulation(g, to, v, tin, low, timer, cut);
-            if (low[to] < low[v]) {
-                low[v] = low[to];
-            }
-            if (parent != -1 && low[to] >= tin[v]) {
-                cut[v] = true;
-            }
-        } else if (tin[to] < low[v]) {
-            low[v] = tin[to];
-        }
-        e = e->next;
-    }
-
-    if (parent == -1 && children > 1) {
-        cut[v] = true;
-    }
-}
-
-void dfs_biconnected(graphlib::Connectivity& g,
-                     int v,
-                     int parent,
-                     std::vector<int>& tin,
-                     std::vector<int>& low,
-                     int& timer,
-                     std::vector<std::pair<int, int>>& edge_stack,
-                     std::vector<std::vector<int>>& components) {
-    tin[v] = timer;
-    low[v] = timer;
-    timer++;
-
-    graphlib::Edge* e = g.get_edges(v);
-    while (e) {
-        int to = e->to;
-        if (to == parent) {
-            e = e->next;
-            continue;
-        }
-        if (tin[to] == -1) {
-            edge_stack.push_back(std::pair<int, int>(v, to));
-            dfs_biconnected(g, to, v, tin, low, timer, edge_stack, components);
-            if (low[to] < low[v]) {
-                low[v] = low[to];
-            }
-            if (low[to] >= tin[v]) {
-                std::vector<int> comp_vertices;
-                while (!edge_stack.empty()) {
-                    std::pair<int, int> e2 = edge_stack.back();
-                    edge_stack.pop_back();
-                    comp_vertices.push_back(e2.first);
-                    comp_vertices.push_back(e2.second);
-                    if ((e2.first == v && e2.second == to) || (e2.first == to && e2.second == v)) {
-                        break;
-                    }
-                }
-                std::sort(comp_vertices.begin(), comp_vertices.end());
-                comp_vertices.erase(std::unique(comp_vertices.begin(), comp_vertices.end()), comp_vertices.end());
-                components.push_back(comp_vertices);
-            }
-        } else if (tin[to] < tin[v]) {
-            edge_stack.push_back(std::pair<int, int>(v, to));
-            if (tin[to] < low[v]) {
-                low[v] = tin[to];
-            }
-        }
-        e = e->next;
-    }
-}
-
-}
+#include <numeric>
+#include <limits>
 
 namespace graphlib {
+
+namespace {
+    void dfs_components(const Graph& g, int u, int cid, std::vector<int>& component, std::vector<bool>& visited) {
+        visited[u] = true;
+        component[u] = cid;
+        Edge* e = g.get_edges(u);
+        while (e) {
+            if (!visited[e->to]) {
+                dfs_components(g, e->to, cid, component, visited);
+            }
+            e = e->next;
+        }
+    }
+
+    void dfs_bridges(const Graph& g, int u, int p, std::vector<int>& tin, std::vector<int>& low, int& timer, std::vector<std::pair<int, int>>& result) {
+        tin[u] = low[u] = timer++;
+        Edge* e = g.get_edges(u);
+        while (e) {
+            int v = e->to;
+            if (v == p) {
+                e = e->next;
+                continue;
+            }
+            if (tin[v] != -1) {
+                low[u] = std::min(low[u], tin[v]);
+            } else {
+                dfs_bridges(g, v, u, tin, low, timer, result);
+                low[u] = std::min(low[u], low[v]);
+                if (low[v] > tin[u]) {
+                    result.push_back({u, v});
+                }
+            }
+            e = e->next;
+        }
+    }
+
+    void dfs_articulation(const Graph& g, int u, int p, std::vector<int>& tin, std::vector<int>& low, int& timer, std::vector<bool>& cut) {
+        tin[u] = low[u] = timer++;
+        int children = 0;
+        Edge* e = g.get_edges(u);
+        while (e) {
+            int v = e->to;
+            if (v == p) {
+                e = e->next;
+                continue;
+            }
+            if (tin[v] != -1) {
+                low[u] = std::min(low[u], tin[v]);
+            } else {
+                dfs_articulation(g, v, u, tin, low, timer, cut);
+                low[u] = std::min(low[u], low[v]);
+                if (low[v] >= tin[u] && p != -1) {
+                    cut[u] = true;
+                }
+                children++;
+            }
+            e = e->next;
+        }
+        if (p == -1 && children > 1) {
+            cut[u] = true;
+        }
+    }
+
+    void dfs_biconnected(const Graph& g, int u, int p, std::vector<int>& tin, std::vector<int>& low, int& timer, std::vector<std::pair<int, int>>& st, std::vector<std::vector<int>>& comps) {
+        tin[u] = low[u] = timer++;
+        int children = 0;
+        Edge* e = g.get_edges(u);
+        while (e) {
+            int v = e->to;
+            if (v == p) {
+                e = e->next;
+                continue;
+            }
+            if (tin[v] != -1) {
+                low[u] = std::min(low[u], tin[v]);
+                if (tin[v] < tin[u]) {
+                    st.push_back({u, v});
+                }
+            } else {
+                st.push_back({u, v});
+                dfs_biconnected(g, v, u, tin, low, timer, st, comps);
+                low[u] = std::min(low[u], low[v]);
+                if (low[v] >= tin[u]) {
+                    std::vector<int> component;
+                    while (true) {
+                        std::pair<int, int> edge = st.back();
+                        st.pop_back();
+                        component.push_back(edge.first);
+                        component.push_back(edge.second);
+                        if (edge.first == u && edge.second == v) break;
+                    }
+                    // Unique vertices
+                    std::sort(component.begin(), component.end());
+                    component.erase(std::unique(component.begin(), component.end()), component.end());
+                    comps.push_back(component);
+                }
+                children++;
+            }
+            e = e->next;
+        }
+    }
+}
 
 Connectivity::Connectivity(int n)
     : Graph(n, false) {

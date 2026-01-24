@@ -5,6 +5,7 @@
 #include "graphlib/dag.h"
 #include "graphlib/general_matching.h"
 #include "graphlib/max_flow.h"
+#include "graphlib/min_cut.h"
 #include "graphlib/mst.h"
 #include "graphlib/scc.h"
 #include "graphlib/shortest_path.h"

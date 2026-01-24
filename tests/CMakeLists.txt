@@ -66,6 +66,33 @@ add_executable(graphlib_tests
     test_bipartite_matching_extra.cpp
     test_stress_combined.cpp
     test_comprehensive_final.cpp
+    test_dominator_tree.cpp
+    test_centroid_decomposition.cpp
+    test_tree_max_path.cpp
+    test_extreme_algo.cpp
+    test_directed_mst.cpp
+    test_dynamic_connectivity.cpp
+    test_extreme_additions_v2.cpp
+    test_graph_measures.cpp
+    test_planarity.cpp
+    test_tree_algo_v2.cpp
+    test_np_hard_v2.cpp
+    test_graph_measures_v2.cpp
+    test_graph_generator.cpp
+    test_extreme_upgrade.cpp
+    test_extreme_upgrade_v2.cpp
+    test_bipartite_matching.cpp
+    test_extreme_matching.cpp
+    test_chordal.cpp
+    test_tree_decomposition.cpp
+    test_block_cut_tree.cpp
+    test_maximum_weight_closure.cpp
+    test_cycle_algo.cpp
+    test_maximum_density_subgraph.cpp
+    test_min_cost_max_flow.cpp
+    test_isomorphism.cpp
+    test_k_shortest_paths.cpp
+    test_tree_path_queries.cpp
 )
 
     target_link_libraries(graphlib_tests

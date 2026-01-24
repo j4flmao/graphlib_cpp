@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "graphlib/graph_core.h"
+#include "graphlib/min_cut.h"
 #include "graphlib/general_matching.h"
 #include "graphlib/tree.h"
 #include "graphlib/splay_tree.h"

@@ -85,6 +85,23 @@ long long value2 = flow.dinic(0, 5);
   - Level graph + blocking flow.
   - Typically much faster for large networks.
 
+### 2.4 Minimum Cut Reachability
+
+After running a max flow algorithm, you can identify the set of vertices reachable from the source in the residual graph. These vertices form the "source side" of a minimum $s-t$ cut.
+
+```cpp
+std::vector<char> reachable;
+flow.min_cut_reachable_from_source(0, reachable);
+
+if (reachable[2]) {
+    // vertex 2 is on the source side of the min cut
+}
+```
+
+- `void min_cut_reachable_from_source(int source, std::vector<char>& reachable) const`:
+  - `reachable` will be resized to `n` and `reachable[i]` will be `1` (true) if `i` is reachable from `source` in the residual graph, `0` otherwise.
+  - **Prerequisite**: You must run `edmonds_karp` or `dinic` first to saturate the flow.
+
 Guidelines:
 
 - Prefer `dinic` for performance-critical applications.

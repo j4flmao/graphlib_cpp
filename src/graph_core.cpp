@@ -15,6 +15,10 @@ Edge::Edge(int to, long long weight)
     : to(to), weight(weight), reverse_idx(-1), next(nullptr) {
 }
 
+Graph::Graph()
+    : n_(0), adj_(nullptr), directed_(true) {
+}
+
 Graph::Graph(int n, bool directed)
     : n_(n), adj_(nullptr), directed_(directed) {
     if (n <= 0) {
@@ -683,165 +687,6 @@ std::vector<int> eulerian_trail_directed(const Graph& g) {
 
     std::reverse(path.begin(), path.end());
     return path;
-}
-
-long long global_min_cut_undirected(const Graph& g) {
-    if (g.is_directed()) {
-        throw std::invalid_argument("global_min_cut_undirected requires an undirected graph");
-    }
-
-    int n = g.vertex_count();
-    if (n <= 1) {
-        return 0;
-    }
-
-    std::vector<std::vector<long long>> w(n, std::vector<long long>(n, 0));
-    for (int u = 0; u < n; u++) {
-        Edge* e = g.get_edges(u);
-        while (e) {
-            int v = e->to;
-            if (u <= v && u != v) {
-                long long weight = e->weight;
-                w[u][v] += weight;
-                w[v][u] += weight;
-            }
-            e = e->next;
-        }
-    }
-
-    std::vector<int> vertices(n);
-    for (int i = 0; i < n; i++) {
-        vertices[i] = i;
-    }
-
-    long long best = std::numeric_limits<long long>::max();
-    std::vector<long long> agg(n);
-    std::vector<char> added(n);
-
-    int size = n;
-    while (size > 1) {
-        for (int i = 0; i < n; i++) {
-            agg[i] = 0;
-            added[i] = 0;
-        }
-
-        int prev = -1;
-        int last = -1;
-
-        for (int i = 0; i < size; i++) {
-            int select_index = -1;
-            for (int j = 0; j < size; j++) {
-                int v = vertices[j];
-                if (!added[v] && (select_index == -1 || agg[v] > agg[vertices[select_index]])) {
-                    select_index = j;
-                }
-            }
-
-            int v = vertices[select_index];
-            added[v] = 1;
-
-            if (i == size - 1) {
-                last = v;
-                if (agg[v] < best) {
-                    best = agg[v];
-                }
-                if (prev != -1) {
-                    for (int j = 0; j < n; j++) {
-                        w[prev][j] += w[v][j];
-                        w[j][prev] = w[prev][j];
-                    }
-                    vertices.erase(vertices.begin() + select_index);
-                    size--;
-                }
-            } else {
-                prev = v;
-                for (int j = 0; j < n; j++) {
-                    if (!added[j]) {
-                        agg[j] += w[v][j];
-                    }
-                }
-            }
-        }
-    }
-
-    if (best == std::numeric_limits<long long>::max()) {
-        return 0;
-    }
-    return best;
-}
-
-void gomory_hu_tree(const Graph& g, std::vector<int>& parent, std::vector<long long>& min_cut) {
-    if (g.is_directed()) {
-        throw std::invalid_argument("gomory_hu_tree requires an undirected graph");
-    }
-
-    int n = g.vertex_count();
-    parent.assign(n, 0);
-    min_cut.assign(n, 0);
-
-    if (n <= 1) {
-        if (n == 1) {
-            parent[0] = 0;
-            min_cut[0] = 0;
-        }
-        return;
-    }
-
-    std::vector<std::vector<long long>> w(n, std::vector<long long>(n, 0));
-    for (int u = 0; u < n; u++) {
-        Edge* e = g.get_edges(u);
-        while (e) {
-            int v = e->to;
-            if (u <= v && u != v) {
-                long long weight = e->weight;
-                w[u][v] += weight;
-                w[v][u] += weight;
-            }
-            e = e->next;
-        }
-    }
-
-    parent[0] = 0;
-    for (int i = 1; i < n; i++) {
-        parent[i] = 0;
-    }
-
-    for (int s = 1; s < n; s++) {
-        int t = parent[s];
-        if (t == s) {
-            continue;
-        }
-
-        MaxFlow mf(n);
-        for (int u = 0; u < n; u++) {
-            for (int v = u + 1; v < n; v++) {
-                long long cap = w[u][v];
-                if (cap > 0) {
-                    mf.add_undirected_edge(u, v, cap);
-                }
-            }
-        }
-
-        long long flow = mf.dinic(s, t);
-        min_cut[s] = flow;
-
-        std::vector<char> reachable;
-        mf.min_cut_reachable_from_source(s, reachable);
-
-        for (int i = 0; i < n; i++) {
-            if (i != s && parent[i] == t && reachable[i]) {
-                parent[i] = s;
-            }
-        }
-
-        if (reachable[parent[t]]) {
-            parent[s] = parent[t];
-            parent[t] = s;
-            long long tmp = min_cut[s];
-            min_cut[s] = min_cut[t];
-            min_cut[t] = tmp;
-        }
-    }
 }
 
 }

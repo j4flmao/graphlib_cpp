@@ -23,9 +23,22 @@ All code samples assume C++17 or later and **0-based vertex indices**.
 - [9. Connectivity and SCC (`connectivity.h`, `scc.h`)](#9-connectivity-and-scc-connectivityh-scch)
 - [10. Splay Tree (`splay_tree.h`)](#10-splay-tree-splay_treeh)
 - [11. Tree and LCA (`tree.h`)](#11-tree-and-lca-treeh)
-- [12. Master Header and Module Includes](#12-master-header-and-module-includes)
+- [12. Advanced Tree Algorithms (`centroid_decomposition.h`, `dominator_tree.h`)](#12-advanced-tree-algorithms-centroid_decompositionh-dominator_treeh)
+- [13. Directed MST (`directed_mst.h`)](#13-directed-mst-directed_msth)
+- [14. Offline Dynamic Connectivity (`dynamic_connectivity.h`)](#14-offline-dynamic-connectivity-dynamic_connectivityh)
+- [15. NP-Hard Algorithms (`np_hard.h`)](#15-np-hard-algorithms-np_hardh)
+- [16. Planarity Testing (`planarity.h`)](#16-planarity-testing-planarityh)
+- [17. K-Shortest Paths (`k_shortest_paths.h`)](#17-k-shortest-paths-k_shortest_pathsh)
+- [18. Chordal Graphs (`chordal.h`)](#18-chordal-graphs-chordalh)
+- [19. Graph Isomorphism (`isomorphism.h`)](#19-graph-isomorphism-isomorphismh)
+- [20. Graph Measures (`graph_measures.h`)](#20-graph-measures-graph_measuresh)
+- [21. Graph Generators (`graph_generator.h`)](#21-graph-generators-graph_generatorh)
+- [22. Minimum Cut (`min_cut.h`)](#22-minimum-cut-min_cuth)
+- [23. Cycle Algorithms (`cycle_algo.h`)](#23-cycle-algorithms-cycle_algoh)
+- [24. Tree Decomposition (`tree_decomposition.h`)](#24-tree-decomposition-tree_decompositionh)
+- [25. Master Header and Module Includes](#25-master-header-and-module-includes)
 
-If you need algorithm theory and complexity details, see `01-ALGORITHMS.md`. This file focuses on **how to call the code**.
+This file focuses on **how to call the code**. For theoretical details, please refer to standard algorithm textbooks (CLRS, etc.).
 
 ---
 
@@ -254,6 +267,7 @@ Main API:
 
 - `TreeLCA`, `build`, `lca`, `parent`, `depth`, `distance`, `kth_on_path`, `is_ancestor`, `kth_ancestor`, `subtree_size`, `hld_pos`, `hld_head`, `hld_decompose_path`.
 - `TreePathSum`, `query_path`, `query_subtree`, `set_value`, `add_value`, `get_value`.
+- `TreePathMax`, `query_path`, `query_subtree`, `set_value`, `get_value`.
 
 Example usage:
 
@@ -275,7 +289,93 @@ See `examples/example_lca.cpp` for a contest-style program that reads a tree and
 
 ---
 
-## 12. Master Header and Module Includes
+## 12. Advanced Tree Algorithms (`centroid_decomposition.h`, `dominator_tree.h`)
+
+High-level:
+
+- **Centroid Decomposition**: Divide-and-conquer on trees for path queries ($O(\log n)$ depth).
+- **Dominator Tree**: Dominance relationships in flow graphs (Lengauer-Tarjan algorithm).
+
+Typical use cases:
+
+- Path counting/summation constraints (e.g., "count paths with length $L$").
+- Compiler optimizations, loop invariant motion, control flow analysis.
+
+Main API:
+
+- `CentroidDecomposition`, `build`, `query_path`.
+- `DominatorTree`, `build`, `immediate_dominator`, `dominates`.
+
+Detailed documentation and examples: see [DOCS_ADVANCED_TREE.md](DOCS_ADVANCED_TREE.md).
+
+---
+
+## 13. Directed MST (`directed_mst.h`)
+
+High-level:
+
+- Minimum Spanning Arborescence for directed graphs (Chu-Liu/Edmonds algorithm).
+- Finding the cheapest tree rooted at a specific vertex that reaches all other vertices.
+
+Typical use cases:
+
+- Network design where links are directed (e.g., broadcast trees).
+- Dependency resolution with costs.
+
+Main API:
+
+- `directed_mst`.
+
+Detailed documentation and examples: see [DOCS_DIRECTED_MST.md](DOCS_DIRECTED_MST.md).
+
+---
+
+## 14. Offline Dynamic Connectivity (`dynamic_connectivity.h`)
+
+High-level:
+
+- Handling edge additions, removals, and connectivity queries over time.
+- Uses Segment Tree + DSU with Rollback to solve the problem "offline" (knowing all queries in advance).
+
+Typical use cases:
+
+- Analyzing network reliability over a timeline of events.
+- Simulating link failures and restorations.
+
+Main API:
+
+- `DynamicConnectivity`, `add_edge`, `remove_edge`, `query`, `solve`.
+
+Detailed documentation and examples: see [DOCS_DYNAMIC_CONNECTIVITY.md](DOCS_DYNAMIC_CONNECTIVITY.md).
+
+---
+
+## 15. NP-Hard Algorithms (`np_hard.h`)
+
+High-level:
+
+- Exact solvers for TSP and Max Clique (for small/medium graphs).
+- Heuristic solver for Graph Coloring.
+- Chinese Postman Problem (Route Inspection).
+
+Typical use cases:
+
+- Optimization problems on small datasets.
+- Route planning requiring edge coverage.
+- Scheduling resources with conflict constraints (coloring).
+
+Main API:
+
+- `tsp_bitmask` (TSP, $N \le 20$).
+- `max_clique_bron_kerbosch`.
+- `greedy_coloring` (Welsh-Powell).
+- `chinese_postman`.
+
+Detailed documentation and examples: see [DOCS_NP_HARD.md](DOCS_NP_HARD.md).
+
+---
+
+## 16. Master Header and Module Includes
 
 High-level:
 
@@ -283,6 +383,17 @@ High-level:
 - Convenient for quick prototypes and small projects.
 
 For larger projects, prefer including only the specific module headers to reduce compile times.
+
+---
+
+## 17. Development Standards
+
+If you plan to contribute to GraphLib or want to understand the coding conventions used:
+
+- **Coding Style**: Naming conventions, formatting, and best practices.
+- **Project Structure**: File organization and namespaces.
+
+See [CPP_STANDARDS.md](CPP_STANDARDS.md) for the full guide.
 
 ---
 
@@ -294,12 +405,25 @@ API module documents and examples:
 - [DOCS_MAX_FLOW.md](DOCS_MAX_FLOW.md) – max flow, min-cost flow, circulation.
 - [DOCS_BIPARTITE.md](DOCS_BIPARTITE.md) – bipartite graphs and assignment.
 - [DOCS_GENERAL_MATCHING.md](DOCS_GENERAL_MATCHING.md) – general graph matching (Blossom).
-- [DOCS_SHORTEST_PATH.md](DOCS_SHORTEST_PATH.md) – shortest path algorithms.
+- [DOCS_NP_HARD.md](DOCS_NP_HARD.md) – TSP, Max Clique, Coloring, Chinese Postman.
+- [DOCS_ADVANCED_ALGO.md](DOCS_ADVANCED_ALGO.md) – Tree Isomorphism, Steiner Tree.
+- [DOCS_SHORTEST_PATH.md](DOCS_SHORTEST_PATH.md) – Dijkstra, Bellman-Ford, etc.
 - [DOCS_DAG.md](DOCS_DAG.md) – DAG algorithms.
 - [DOCS_MST_UNIONFIND.md](DOCS_MST_UNIONFIND.md) – MST and Union-Find.
 - [DOCS_CONNECTIVITY_SCC.md](DOCS_CONNECTIVITY_SCC.md) – connectivity and SCC.
 - [DOCS_SPLAY_TREE.md](DOCS_SPLAY_TREE.md) – splay tree data structure.
 - [DOCS_TREE.md](DOCS_TREE.md) – tree LCA and distance queries.
+- [DOCS_ADVANCED_TREE.md](DOCS_ADVANCED_TREE.md) – Centroid Decomposition, Dominator Tree.
+- [DOCS_ADVANCED_STRUCTURES.md](DOCS_ADVANCED_STRUCTURES.md) – Link-Cut Tree, DSU with Rollback.
+- [DOCS_PLANARITY.md](DOCS_PLANARITY.md) – Planarity check and embedding.
+- [DOCS_K_SHORTEST_PATHS.md](DOCS_K_SHORTEST_PATHS.md) – Yen's K-Shortest Paths.
+- [DOCS_CHORDAL.md](DOCS_CHORDAL.md) – Chordal graph algorithms.
+- [DOCS_ISOMORPHISM.md](DOCS_ISOMORPHISM.md) – VF2 Isomorphism.
+- [DOCS_GRAPH_MEASURES.md](DOCS_GRAPH_MEASURES.md) – Centrality and Communities.
+- [DOCS_GRAPH_GENERATOR.md](DOCS_GRAPH_GENERATOR.md) – Random and synthetic graphs.
+- [DOCS_MIN_CUT.md](DOCS_MIN_CUT.md) – Global min-cut and Gomory-Hu.
+- [DOCS_CYCLE_ALGO.md](DOCS_CYCLE_ALGO.md) – Minimum mean cycle.
+- [DOCS_TREE_DECOMPOSITION.md](DOCS_TREE_DECOMPOSITION.md) – Tree decomposition.
 
 ---
 
@@ -314,13 +438,15 @@ This table links documentation modules to concrete example programs in the `exam
 | `DOCS_MAX_FLOW.md` | `examples/example_min_cost_flow.cpp` | Min-cost max flow with capacities and per-unit costs |
 | `DOCS_BIPARTITE.md` | `examples/example_bipartite.cpp` | Bipartite maximum matching and Hungarian minimum-cost assignment |
 | `DOCS_GENERAL_MATCHING.md` | `examples/example_general_matching.cpp` | General (non-bipartite) maximum and maximum-weight matching using Blossom |
-| `DOCS_SHORTEST_PATH.md` | `examples/example_johnson.cpp` | Johnson’s all-pairs shortest paths with possible negative edges |
+| `DOCS_SHORTEST_PATH.md` | `examples/example_johnson.cpp`, `examples/example_shortest_path.cpp` | All-pairs and single-source shortest paths (Dijkstra, Bellman-Ford, Johnson) |
 | `DOCS_DAG.md` | `examples/example_dag.cpp` | DAG topological sort, longest/shortest paths, and path counting |
+| `DOCS_MST_UNIONFIND.md` | `examples/example_mst.cpp` | Kruskal and Prim algorithms |
 | `DOCS_SPLAY_TREE.md` | `examples/example_splay_tree.cpp` | Splay tree insert/search/remove and range-sum queries |
 | Tree and LCA (`tree.h`) | `examples/example_lca.cpp` | Contest-style LCA and distance queries on a tree |
 | `DOCS_CONNECTIVITY_SCC.md` | `examples/example_twosat.cpp` | Two-SAT solver built on SCC and implication graph |
+| `DOCS_NP_HARD.md` | `examples/example_np_hard.cpp` | NP-Hard problems (TSP, Max Clique, Coloring, Chinese Postman) |
+| `DOCS_ADVANCED_TREE.md` | (Planned) | Centroid Decomposition and Dominator Tree |
 
 Planned examples (to be extended in future iterations):
 
-- MST and Union-Find usage based on `DOCS_MST_UNIONFIND.md`.
 - Connectivity and SCC condensation DAGs based on `DOCS_CONNECTIVITY_SCC.md`.

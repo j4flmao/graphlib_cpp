@@ -1,231 +1,249 @@
 #include "graphlib/bipartite.h"
+#include "graphlib/max_flow.h"
 #include <queue>
-#include <stdexcept>
-#include <vector>
+#include <algorithm>
 #include <limits>
+#include <functional>
 
 namespace graphlib {
 
-BipartiteGraph::BipartiteGraph(int n_left, int n_right)
-    : Graph(n_left + n_right, false), n_left_(n_left), n_right_(n_right) {
-    if (n_left <= 0 || n_right <= 0) {
-        throw std::invalid_argument("Partition sizes must be positive");
-    }
+BipartiteGraph::BipartiteGraph(int n_left, int n_right) 
+    : Graph(n_left + n_right, false), n_left_(n_left), n_right_(n_right) {}
+
+bool BipartiteGraph::is_bipartite() const {
+    return !graphlib::is_bipartite(*this).empty();
 }
 
-bool BipartiteGraph::is_bipartite() {
-    int total = n_left_ + n_right_;
-    int* color = new int[total];
-    for (int i = 0; i < total; i++) {
-        color[i] = -1;
+long long BipartiteGraph::hungarian_min_cost(long long max_cost_limit) {
+    int source = vertex_count();
+    int sink = source + 1;
+    MaxFlow mf(sink + 1);
+    
+    // Edges from source to left partition
+    for (int i = 0; i < n_left_; ++i) {
+        mf.add_edge(source, i, 1, 0);
     }
-
-    std::queue<int> q;
-    for (int start = 0; start < total; start++) {
-        if (color[start] != -1) {
-            continue;
+    
+    // Edges from right partition to sink
+    for (int i = n_left_; i < n_left_ + n_right_; ++i) {
+        mf.add_edge(i, sink, 1, 0);
+    }
+    
+    // Edges between partitions (from left to right)
+    for (int u = 0; u < n_left_; ++u) {
+        Edge* e = get_edges(u);
+        while (e) {
+            int v = e->to;
+            // Only consider edges to the right partition
+            if (v >= n_left_ && v < n_left_ + n_right_) {
+                mf.add_edge(u, v, 1, e->weight);
+            }
+            e = e->next;
         }
-        color[start] = 0;
-        q.push(start);
+    }
+    
+    std::pair<long long, long long> result = mf.min_cost_max_flow(source, sink);
+    return result.second;
+}
+
+int BipartiteGraph::maximum_matching() {
+    std::vector<int> match = hopcroft_karp_matching(*this);
+    int count = 0;
+    for (int x : match) {
+        if (x != -1) count++;
+    }
+    return count / 2;
+}
+
+GRAPHLIB_API std::vector<int> is_bipartite(const Graph& g) {
+    int n = g.vertex_count();
+    std::vector<int> color(n, -1);
+    bool possible = true;
+
+    for (int i = 0; i < n; ++i) {
+        if (color[i] != -1) continue;
+
+        std::queue<int> q;
+        q.push(i);
+        color[i] = 0;
 
         while (!q.empty()) {
-            int v = q.front();
+            int u = q.front();
             q.pop();
 
-            Edge* e = get_edges(v);
+            Edge* e = g.get_edges(u);
             while (e) {
-                int to = e->to;
-                if (color[to] == -1) {
-                    color[to] = 1 - color[v];
-                    q.push(to);
-                } else if (color[to] == color[v]) {
-                    delete[] color;
-                    return false;
+                int v = e->to;
+                if (color[v] == -1) {
+                    color[v] = 1 - color[u];
+                    q.push(v);
+                } else if (color[v] == color[u]) {
+                    return {}; // Not bipartite
                 }
                 e = e->next;
             }
         }
     }
-
-    delete[] color;
-    return true;
+    return color;
 }
 
-bool BipartiteGraph::bfs_hopcroft_karp(int* dist, int* pair_u, int* pair_v) {
-    std::queue<int> q;
-    const int inf = n_left_ + n_right_ + 1;
+GRAPHLIB_API std::vector<int> hopcroft_karp_matching(const Graph& g) {
+    int n = g.vertex_count();
+    std::vector<int> partition = is_bipartite(g);
+    if (partition.empty()) {
+        return {}; // Not bipartite
+    }
 
-    for (int u = 0; u < n_left_; u++) {
-        if (pair_u[u] == -1) {
-            dist[u] = 0;
-            q.push(u);
-        } else {
-            dist[u] = inf;
+    // pair_u[u] stores the vertex in V matched with u in U
+    // pair_v[v] stores the vertex in U matched with v in V
+    std::vector<int> pair_u(n, -1); 
+    std::vector<int> pair_v(n, -1); 
+    std::vector<int> dist(n);
+
+    std::vector<int> U;
+    for(int i=0; i<n; ++i) {
+        if(partition[i] == 0) U.push_back(i);
+    }
+
+    // Ptr array for DFS optimization (Dinic-style)
+    std::vector<Edge*> ptr(n);
+
+    while (true) {
+        // BFS to find shortest augmenting paths
+        std::queue<int> q;
+        for (int u : U) {
+            if (pair_u[u] == -1) {
+                dist[u] = 0;
+                q.push(u);
+            } else {
+                dist[u] = std::numeric_limits<int>::max();
+            }
+        }
+
+        int max_dist = std::numeric_limits<int>::max();
+
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+
+            if (dist[u] < max_dist) {
+                for (Edge* e = g.get_edges(u); e != nullptr; e = e->next) {
+                    int v = e->to;
+                    if (partition[v] == 0) continue; // Skip edges within same partition (shouldn't happen in bipartite)
+
+                    if (pair_v[v] == -1) {
+                        if (max_dist == std::numeric_limits<int>::max()) {
+                            max_dist = dist[u] + 1;
+                        }
+                    } else {
+                        int next_u = pair_v[v];
+                        if (dist[next_u] == std::numeric_limits<int>::max()) {
+                            dist[next_u] = dist[u] + 1;
+                            q.push(next_u);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (max_dist == std::numeric_limits<int>::max()) break;
+
+        // DFS with ptr optimization
+        for (int i = 0; i < n; ++i) ptr[i] = g.get_edges(i);
+
+        std::function<bool(int)> dfs;
+        dfs = [&](int u) -> bool {
+            for (Edge*& e = ptr[u]; e != nullptr; e = e->next) {
+                int v = e->to;
+                if (partition[v] == 0) continue;
+
+                if (pair_v[v] == -1) {
+                    // Found an unmatched vertex in V
+                    // It must be at the correct distance
+                    if (dist[u] + 1 == max_dist) {
+                        pair_v[v] = u;
+                        pair_u[u] = v;
+                        return true;
+                    }
+                } else {
+                    int next_u = pair_v[v];
+                    if (dist[next_u] == dist[u] + 1) {
+                        if (dfs(next_u)) {
+                            pair_v[v] = u;
+                            pair_u[u] = v;
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        };
+
+        for (int u : U) {
+            if (pair_u[u] == -1) {
+                dfs(u);
+            }
         }
     }
 
-    int max_dist = inf;
-
-    while (!q.empty()) {
-        int u = q.front();
-        q.pop();
-
-        if (dist[u] >= max_dist) {
-            continue;
+    std::vector<int> result(n, -1);
+    for (int i = 0; i < n; ++i) {
+        if (partition[i] == 0 && pair_u[i] != -1) {
+            result[i] = pair_u[i];
+            result[pair_u[i]] = i;
+        } else if (partition[i] == 1 && pair_v[i] != -1) {
+            result[i] = pair_v[i];
+            result[pair_v[i]] = i;
         }
+    }
+    return result;
+}
 
-        Edge* e = get_edges(u);
+GRAPHLIB_API std::vector<int> max_bipartite_matching_dfs(const Graph& g) {
+    int n = g.vertex_count();
+    std::vector<int> partition = is_bipartite(g);
+    if (partition.empty()) return {};
+
+    std::vector<int> match(n, -1);
+    std::vector<bool> vis;
+    
+    std::function<bool(int)> dfs;
+    dfs = [&](int u) {
+        Edge* e = g.get_edges(u);
         while (e) {
-            int v_index = e->to - n_left_;
-            if (v_index >= 0 && v_index < n_right_) {
-                int matched_u = pair_v[v_index];
-                if (matched_u == -1) {
-                    max_dist = dist[u] + 1;
-                } else if (dist[matched_u] == inf) {
-                    dist[matched_u] = dist[u] + 1;
-                    q.push(matched_u);
+            int v = e->to;
+            if (!vis[v]) {
+                vis[v] = true;
+                if (match[v] < 0 || dfs(match[v])) {
+                    match[v] = u;
+                    return true;
                 }
             }
             e = e->next;
         }
-    }
-
-    return max_dist != inf;
-}
-
-bool BipartiteGraph::dfs_hopcroft_karp(int u, int* dist, int* pair_u, int* pair_v) {
-    const int inf = n_left_ + n_right_ + 1;
-
-    Edge* e = get_edges(u);
-    while (e) {
-        int v_index = e->to - n_left_;
-        if (v_index >= 0 && v_index < n_right_) {
-            int matched_u = pair_v[v_index];
-            if (matched_u == -1 || (dist[matched_u] == dist[u] + 1 && dfs_hopcroft_karp(matched_u, dist, pair_u, pair_v))) {
-                pair_u[u] = v_index;
-                pair_v[v_index] = u;
-                return true;
-            }
-        }
-        e = e->next;
-    }
-
-    dist[u] = inf;
-    return false;
-}
-
-int BipartiteGraph::maximum_matching() {
-    int* pair_u = new int[n_left_];
-    int* pair_v = new int[n_right_];
-    int* dist = new int[n_left_];
-
-    for (int i = 0; i < n_left_; i++) {
-        pair_u[i] = -1;
-    }
-    for (int j = 0; j < n_right_; j++) {
-        pair_v[j] = -1;
-    }
+        return false;
+    };
 
     int result = 0;
-
-    while (bfs_hopcroft_karp(dist, pair_u, pair_v)) {
-        for (int u = 0; u < n_left_; u++) {
-            if (pair_u[u] == -1) {
-                if (dfs_hopcroft_karp(u, dist, pair_u, pair_v)) {
-                    result++;
-                }
+    // Iterate only over one partition (e.g. 0)
+    for (int i = 0; i < n; ++i) {
+        if (partition[i] == 0) {
+            vis.assign(n, false);
+            if (dfs(i)) {
+                result++;
             }
         }
     }
-
-    delete[] pair_u;
-    delete[] pair_v;
-    delete[] dist;
-
-    return result;
-}
-
-long long BipartiteGraph::hungarian_min_cost(long long inf) {
-    if (n_left_ <= 0 || n_right_ <= 0) {
-        return 0;
-    }
-
-    int n = n_left_;
-    int m = n_right_;
-
-    std::vector<std::vector<long long>> cost(n, std::vector<long long>(m, inf));
-
-    for (int u = 0; u < n_left_; u++) {
-        Edge* e = get_edges(u);
-        while (e) {
-            int v_index = e->to - n_left_;
-            if (v_index >= 0 && v_index < n_right_) {
-                if (e->weight < cost[u][v_index]) {
-                    cost[u][v_index] = e->weight;
-                }
-            }
-            e = e->next;
+    
+    // Construct symmetric result
+    std::vector<int> final_match(n, -1);
+    for (int i = 0; i < n; ++i) {
+        if (partition[i] == 1 && match[i] != -1) {
+            final_match[i] = match[i];
+            final_match[match[i]] = i;
         }
     }
-
-    std::vector<long long> u(n + 1, 0);
-    std::vector<long long> v(m + 1, 0);
-    std::vector<int> p(m + 1, 0);
-    std::vector<int> way(m + 1, 0);
-
-    for (int i = 1; i <= n; i++) {
-        p[0] = i;
-        long long j0 = 0;
-        std::vector<long long> minv(m + 1, inf);
-        std::vector<char> used(m + 1, 0);
-        do {
-            used[j0] = 1;
-            int i0 = p[j0];
-            long long delta = std::numeric_limits<long long>::max();
-            int j1 = 0;
-            for (int j = 1; j <= m; j++) {
-                if (used[j]) {
-                    continue;
-                }
-                long long cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
-                if (cur < minv[j]) {
-                    minv[j] = cur;
-                    way[j] = static_cast<int>(j0);
-                }
-                if (minv[j] < delta) {
-                    delta = minv[j];
-                    j1 = j;
-                }
-            }
-            for (int j = 0; j <= m; j++) {
-                if (used[j]) {
-                    u[p[j]] += delta;
-                    v[j] -= delta;
-                } else {
-                    minv[j] -= delta;
-                }
-            }
-            j0 = j1;
-        } while (p[j0] != 0);
-
-        do {
-            int j1 = way[j0];
-            p[j0] = p[j1];
-            j0 = j1;
-        } while (j0 != 0);
-    }
-
-    long long result = 0;
-    for (int j = 1; j <= m; j++) {
-        if (p[j] != 0) {
-            int i = p[j] - 1;
-            if (i >= 0 && i < n) {
-                result += cost[i][j - 1];
-            }
-        }
-    }
-
-    return result;
+    return final_match;
 }
 
 }

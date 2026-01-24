@@ -110,7 +110,7 @@ Typical use cases:
 
 ## 5. Longest and Shortest Paths in DAG
 
-### 4.1 Longest Path
+### 5.1 Longest Path
 
 ```cpp
 long long MINUS_INF = -1000000000000LL;
@@ -121,7 +121,7 @@ auto longest = dag.longest_path(0, MINUS_INF);
   - Computes longest distance from `source` to all vertices.
   - `minus_inf` is a sentinel value for unreachable nodes.
 
-### 4.2 Shortest Path
+### 5.2 Shortest Path
 
 ```cpp
 long long INF = 1000000000000LL;
@@ -155,3 +155,26 @@ Use this for:
 
 - Counting possible sequences of tasks or states.
 - Analysing reachability patterns in DAGs.
+
+---
+
+## 7. SCC Condensation DAG
+
+You can build a DAG representing the condensation of a directed graph (where each node is a Strongly Connected Component) using a helper function:
+
+```cpp
+#include <graphlib/scc.h> // for build_scc_condensation_dag
+
+// Assume 'g' is a directed graph and we have computed SCCs:
+// std::vector<int> component(g.vertex_count());
+// int scc_count = ...; 
+
+graphlib::DAG condensation = graphlib::build_scc_condensation_dag(g, component, scc_count);
+```
+
+- `DAG build_scc_condensation_dag(const Graph& g, const std::vector<int>& component, int component_count)`:
+  - Creates a new DAG where vertices `0..component_count-1` represent the SCCs.
+  - Adds an edge `u -> v` in the DAG if there is an edge in `g` from any node in SCC `u` to any node in SCC `v` (and `u != v`).
+  - Useful for running DAG algorithms (like longest path) on general directed graphs after condensing cycles.
+
+See [DOCS_CONNECTIVITY_SCC.md](DOCS_CONNECTIVITY_SCC.md) for more details on computing SCCs.

@@ -27,6 +27,7 @@ protected:
     void clear_adj_list();
 
 public:
+    Graph();
     explicit Graph(int n, bool directed = true);
     virtual ~Graph();
 
@@ -58,8 +59,6 @@ GRAPHLIB_API std::vector<int> eulerian_trail_undirected(const Graph& g);
 GRAPHLIB_API bool has_eulerian_trail_directed(const Graph& g);
 GRAPHLIB_API bool has_eulerian_cycle_directed(const Graph& g);
 GRAPHLIB_API std::vector<int> eulerian_trail_directed(const Graph& g);
-GRAPHLIB_API long long global_min_cut_undirected(const Graph& g);
-GRAPHLIB_API void gomory_hu_tree(const Graph& g, std::vector<int>& parent, std::vector<long long>& min_cut);
 
 } 
 

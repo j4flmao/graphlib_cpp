@@ -9,18 +9,27 @@ A comprehensive, high-performance C++ library for graph algorithms and data stru
 ## 🎯 Features
 
 ### Graph Algorithms
-- **Maximum Flow**: Edmonds-Karp, Dinic's algorithm, Min-Cost Max Flow
+- **Connectivity**: Connected Components, Bridges, Articulation Points, Strongly Connected Components (Tarjan, Kosaraju), 2-SAT
+- **Maximum Flow**: Edmonds-Karp, Dinic's algorithm, Min-Cost Max Flow, Min-Cost Circulation
 - **Bipartite Graphs**: 2-coloring, maximum matching (Hopcroft-Karp), Hungarian assignment
 - **General Graph Matching**: Edmonds' Blossom (maximum cardinality and maximum weight)
-- **DAG Operations**: Topological sort, longest/shortest paths, path counting
-- **Shortest Paths**: Dijkstra, Bellman-Ford, Floyd-Warshall, Johnson, A*
-- **Minimum Spanning Tree**: Kruskal, Prim with Union-Find
+- **DAG Operations**: Topological sort, longest/shortest paths, path counting, SCC condensation
+- **Shortest Paths**: Dijkstra, Bellman-Ford, Floyd-Warshall, Johnson, A*, K-Shortest Paths (Yen's Algorithm), Minimum Mean Cycle
+- **Minimum Spanning Tree**: Kruskal, Prim with Union-Find, Directed MST (Chu-Liu/Edmonds)
+- **Tree Algorithms**: Lowest Common Ancestor (LCA), Heavy-Light Decomposition, Path Sum/Max Queries, Centroid Decomposition, Dominator Tree (Lengauer-Tarjan), Tree Decomposition
+- **NP-Hard Problems**: TSP (Bitmask DP), Max Clique (Bron-Kerbosch), Graph Coloring (Welsh-Powell), Chinese Postman Problem
+- **Advanced Algorithms**: Tree Isomorphism (Rooted/Unrooted), Steiner Tree (Dreyfus-Wagner), Tree Center, Planarity Testing (Demoucron), Chordal Graphs (MCS, PEO, Max Clique/Coloring), Graph Isomorphism (VF2, WL Hash)
+- **Graph Measures**: Centrality (Degree, Closeness, Betweenness, Eigenvector, PageRank, Katz, HITS), Community Detection (LPA, Modularity)
+- **Generators**: Random (Erdős-Rényi, Watts-Strogatz, Barabási-Albert), Grid, Tree, Complete, Cycle
+- **Min Cut**: Global Min Cut (Stoer-Wagner), Gomory-Hu Tree
 
 ### Data Structures
 - **Splay Tree**: Self-balancing BST with O(log n) amortized operations
   - Insert, search, delete
   - Split and join operations
   - Range queries
+- **Link-Cut Tree**: Dynamic tree data structure for O(log n) path queries and link/cut operations
+- **DSU with Rollback**: Disjoint Set Union supporting state rollback (useful for dynamic connectivity)
 
 ### Design Principles
 ✅ **Modern C++17** with RAII and proper memory management  
@@ -317,10 +326,17 @@ graphlib/
 │   ├── graph_core.h
 │   ├── max_flow.h
 │   ├── bipartite.h
+│   ├── general_matching.h
 │   ├── dag.h
 │   ├── shortest_path.h
 │   ├── mst.h
+│   ├── connectivity.h
+│   ├── scc.h
+│   ├── tree.h
 │   ├── splay_tree.h
+│   ├── np_hard.h
+│   ├── centroid_decomposition.h
+│   ├── dominator_tree.h
 │   └── graphlib.h         # Master header
 ├── src/                   # Implementation
 ├── tests/                 # Unit tests
@@ -390,19 +406,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🗺️ Roadmap
 
-### Current (v1.0.0)
-- ✅ Core graph algorithms
-- ✅ Splay tree implementation
-- ✅ Cross-platform build system
-- ✅ Comprehensive documentation
+### Current (v1.0.4)
+- ✅ Core graph algorithms & Data Structures
+- ✅ Max Flow & Min-Cost Flow
+- ✅ Bipartite Matching & General Matching (Blossom)
+- ✅ NP-Hard Algorithms (TSP, Clique, Coloring)
+- ✅ Advanced Tree Algorithms (LCA, Centroid, Dominator, Isomorphism)
+- ✅ Planarity Testing & K-Shortest Paths
+- ✅ Chordal Graphs & Graph Measures
+- ✅ Cross-platform build system & Documentation
 
-### Future (v1.1.0)
-- ⬜ More graph algorithms (A*, strongly connected components)
+### Future
 - ⬜ Additional data structures (AVL tree, B-tree)
 - ⬜ Python bindings
 - ⬜ GPU acceleration for large graphs
-
-### Future (v2.0.0)
 - ⬜ Thread-safe operations
 - ⬜ Distributed graph processing
 - ⬜ Graph database backend

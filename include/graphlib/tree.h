@@ -73,6 +73,29 @@ public:
     long long query_subtree(int v) const;
 };
 
+class GRAPHLIB_API TreePathMax {
+private:
+    const TreeLCA* tree_;
+    int n_;
+    int size_;
+    std::vector<long long> data_;
+    std::vector<long long> seg_;
+
+    void build_segment_tree();
+    void build_from_data();
+    void point_update_internal(int idx, long long value);
+    long long range_query_internal(int left, int right) const;
+
+public:
+    TreePathMax(const TreeLCA& tree, const std::vector<long long>& values);
+
+    int size() const { return n_; }
+    long long get_value(int v) const;
+    void set_value(int v, long long value);
+    long long query_path(int u, int v) const;
+    long long query_subtree(int v) const;
+};
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif

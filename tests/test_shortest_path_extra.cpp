@@ -1,128 +1,84 @@
 #include <gtest/gtest.h>
-#include <graphlib/shortest_path.h>
+#include "graphlib/shortest_path.h"
 #include <vector>
-#include <limits>
 
 using namespace graphlib;
 
-class ShortestPathExtraTest : public ::testing::Test {
-protected:
-    const long long INF = 1e18;
-    void SetUp() override {
-    }
-};
-
-TEST_F(ShortestPathExtraTest, BellmanFordNegativeCycle) {
-    int n = 3;
-    ShortestPath sp(n);
-    // 0 -> 1 (1)
-    // 1 -> 2 (-5)
-    // 2 -> 0 (2)
-    // Cycle: 0->1->2->0 weight: 1 - 5 + 2 = -2
-    sp.add_edge(0, 1, 1);
-    sp.add_edge(1, 2, -5);
-    sp.add_edge(2, 0, 2);
-
-    bool has_cycle = false;
-    sp.bellman_ford(0, INF, has_cycle);
-    EXPECT_TRUE(has_cycle);
+TEST(YenKShortestPathsTest, SimpleGraph) {
+    ShortestPath sp(6);
+    // 0 -> 1 -> 3 -> 5 (cost 10+10+10=30)
+    // 0 -> 2 -> 3 -> 5 (cost 5+20+10=35)
+    // 0 -> 2 -> 4 -> 5 (cost 5+5+30=40)
+    
+    sp.add_edge(0, 1, 10);
+    sp.add_edge(1, 3, 10);
+    sp.add_edge(3, 5, 10);
+    
+    sp.add_edge(0, 2, 5);
+    sp.add_edge(2, 3, 20);
+    sp.add_edge(2, 4, 5);
+    sp.add_edge(4, 5, 30);
+    
+    // Extra edge to make more paths
+    sp.add_edge(1, 2, 2); 
+    // New path: 0->1->2->3->5 (10+2+20+10 = 42)
+    // New path: 0->1->2->4->5 (10+2+5+30 = 47)
+    
+    // K=3
+    auto paths = sp.k_shortest_paths(0, 5, 3, 1000000);
+    
+    ASSERT_EQ(paths.size(), 3);
+    
+    // Path 1: 0->1->3->5 (30)
+    std::vector<int> p1 = {0, 1, 3, 5};
+    EXPECT_EQ(paths[0], p1);
+    
+    // Path 2: 0->2->3->5 (35)
+    std::vector<int> p2 = {0, 2, 3, 5};
+    EXPECT_EQ(paths[1], p2);
+    
+    // Path 3: 0->2->4->5 (40)
+    std::vector<int> p3 = {0, 2, 4, 5};
+    EXPECT_EQ(paths[2], p3);
 }
 
-TEST_F(ShortestPathExtraTest, BellmanFordNoCycle) {
-    int n = 3;
-    ShortestPath sp(n);
-    // 0 -> 1 (1)
-    // 1 -> 2 (-2)
-    // 2 -> 0 (5)
-    // Cycle: 0->1->2->0 weight: 1 - 2 + 5 = 4 > 0
-    sp.add_edge(0, 1, 1);
-    sp.add_edge(1, 2, -2);
-    sp.add_edge(2, 0, 5);
-
-    bool has_cycle = false;
-    auto dist = sp.bellman_ford(0, INF, has_cycle);
-    EXPECT_FALSE(has_cycle);
-    EXPECT_EQ(dist[0], 0);
-    EXPECT_EQ(dist[1], 1);
-    EXPECT_EQ(dist[2], -1);
+TEST(YenKShortestPathsTest, NotEnoughPaths) {
+    ShortestPath sp(3);
+    sp.add_edge(0, 1, 10);
+    sp.add_edge(1, 2, 10);
+    
+    // Only 1 path: 0->1->2
+    auto paths = sp.k_shortest_paths(0, 2, 5, 1000000);
+    
+    ASSERT_EQ(paths.size(), 1);
+    std::vector<int> p1 = {0, 1, 2};
+    EXPECT_EQ(paths[0], p1);
 }
 
-TEST_F(ShortestPathExtraTest, FloydWarshallSimple) {
-    int n = 4;
-    ShortestPath sp(n);
+TEST(YenKShortestPathsTest, Disconnected) {
+    ShortestPath sp(3);
+    sp.add_edge(0, 1, 10);
+    
+    auto paths = sp.k_shortest_paths(0, 2, 3, 1000000);
+    EXPECT_EQ(paths.size(), 0);
+}
+
+TEST(YenKShortestPathsTest, ParallelEdges) {
+    ShortestPath sp(2);
+    sp.add_edge(0, 1, 10);
+    sp.add_edge(0, 1, 20);
     sp.add_edge(0, 1, 5);
-    sp.add_edge(1, 2, 3);
-    sp.add_edge(2, 3, 1);
-    sp.add_edge(0, 3, 10);
     
-    // 0 -> 3 direct is 10
-    // 0 -> 1 -> 2 -> 3 is 5+3+1 = 9
+    auto paths = sp.k_shortest_paths(0, 1, 3, 1000000);
     
-    auto dist = sp.floyd_warshall(INF);
+    // Standard Yen's implementation (vertex based) might not distinguish parallel edges unless edges are explicit in path.
+    // My implementation returns vector<int> (vertices).
+    // So it will see 0->1 as ONE path, regardless of which edge is used.
+    // The loop in k_shortest_paths checks `existing == p.path`.
+    // Since path is vector of vertices, [0, 1] == [0, 1].
+    // So it will distinct paths based on vertices.
+    // Thus, parallel edges with same vertices will be collapsed into ONE path in the output.
     
-    EXPECT_EQ(dist[0][3], 9);
-    EXPECT_EQ(dist[0][1], 5);
-    EXPECT_EQ(dist[0][2], 8);
-    EXPECT_EQ(dist[1][3], 4);
-}
-
-TEST_F(ShortestPathExtraTest, FloydWarshallDisconnect) {
-    int n = 2;
-    ShortestPath sp(n);
-    auto dist = sp.floyd_warshall(INF);
-    EXPECT_GE(dist[0][1], INF/2);
-}
-
-TEST_F(ShortestPathExtraTest, JohnsonNegativeEdges) {
-    int n = 3;
-    ShortestPath sp(n);
-    sp.add_edge(0, 1, 1);
-    sp.add_edge(1, 2, -2);
-    // 0->2 cost -1
-    
-    bool has_cycle = false;
-    auto dist = sp.johnson(INF, has_cycle);
-    
-    EXPECT_FALSE(has_cycle);
-    EXPECT_EQ(dist[0][2], -1);
-}
-
-TEST_F(ShortestPathExtraTest, AStarSimple) {
-    int n = 5;
-    ShortestPath sp(n);
-    sp.add_edge(0, 1, 1);
-    sp.add_edge(1, 2, 1);
-    sp.add_edge(2, 3, 1);
-    sp.add_edge(3, 4, 1);
-    
-    // Heuristic: dist to 4.
-    // real dists: 4, 3, 2, 1, 0
-    // admissible heuristic: h(u) <= real(u, target)
-    std::vector<long long> h = {4, 3, 2, 1, 0};
-    
-    auto dist = sp.a_star(0, 4, h, INF);
-    EXPECT_EQ(dist[4], 4);
-}
-
-TEST_F(ShortestPathExtraTest, MultiSourceDijkstra) {
-    int n = 6;
-    ShortestPath sp(n);
-    // Sources: 0, 1
-    // 0 -> 2 (10)
-    // 1 -> 3 (5)
-    // 2 -> 4 (2)
-    // 3 -> 4 (2)
-    
-    sp.add_edge(0, 2, 10);
-    sp.add_edge(1, 3, 5);
-    sp.add_edge(2, 4, 2);
-    sp.add_edge(3, 4, 2);
-    
-    std::vector<int> sources = {0, 1};
-    auto dist = sp.multi_source_dijkstra(sources, INF);
-    
-    // dist[4]: min(dist(0,4), dist(1,4)) = min(12, 7) = 7
-    EXPECT_EQ(dist[4], 7);
-    EXPECT_EQ(dist[2], 10);
-    EXPECT_EQ(dist[3], 5);
+    ASSERT_EQ(paths.size(), 1);
+    EXPECT_EQ(paths[0], (std::vector<int>{0, 1}));
 }

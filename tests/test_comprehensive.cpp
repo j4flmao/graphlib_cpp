@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <graphlib/graphlib.h>
+#include "graphlib/min_cut.h"
 #include <vector>
 #include <algorithm>
 #include <random>

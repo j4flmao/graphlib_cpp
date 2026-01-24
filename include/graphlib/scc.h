@@ -53,7 +53,10 @@ private:
     };
 
     int n_;
+#pragma warning(push)
+#pragma warning(disable: 4251)
     std::vector<Implication> implications_;
+#pragma warning(pop)
 
     int encode_literal(int var, bool value) const;
     void add_implication(int from, int to);

@@ -158,9 +158,9 @@ Use this when:
 
 ---
 
-## 8. Minimum Mean Cycle – Đồ thị có hướng, chu trình (có thể âm)
+## 8. Minimum Mean Cycle
 
-Trong một số bài toán mạng có hướng, bạn cần tìm **chu trình có trọng số trung bình nhỏ nhất** (minimum mean cycle), cho phép trọng số cạnh âm.
+In some directed network problems, you need to find the **cycle with the minimum mean weight** (minimum average weight per edge), allowing for negative edge weights.
 
 ```cpp
 long double mean = 0.0L;
@@ -170,19 +170,19 @@ mean = sp.minimum_mean_cycle(has_cycle);
 ```
 
 - `long double minimum_mean_cycle(bool& has_cycle)`:
-  - Tính giá trị trung bình nhỏ nhất của mọi chu trình đơn trong đồ thị.
-  - Nếu tồn tại ít nhất một chu trình, đặt `has_cycle = true` và trả về giá trị trung bình nhỏ nhất.
-  - Nếu đồ thị không có chu trình, đặt `has_cycle = false` và trả về `0.0L`.
+  - Calculates the minimum mean weight of all simple cycles in the graph.
+  - If at least one cycle exists, sets `has_cycle = true` and returns the minimum mean value.
+  - If the graph has no cycles (is a DAG), sets `has_cycle = false` and returns `0.0L`.
 
-Lưu ý:
+Note:
 
-- Cho phép trọng số cạnh âm, nên bài toán thường xuất hiện khi có “lợi nhuận” hay “chi phí” lặp lại theo chu trình.
-- Thuật toán dựa trên Karp, độ phức tạp xấp xỉ `O(V * E)`.
+- Allows negative edge weights, so this problem often arises when dealing with recurring "profits" or "costs".
+- The algorithm is based on Karp's theorem, with complexity approximately `O(V * E)`.
 
-Ứng dụng điển hình:
+Typical use cases:
 
-- Phát hiện chu trình “lãi trung bình” lớn nhất/nhỏ nhất sau khi biến đổi trọng số.
-- Phân tích long-run average cost trong các mô hình Markov / graph-based DP.
+- Detecting the "best" or "worst" average cycle after transforming weights.
+- Analyzing long-run average costs in Markov models or graph-based DP.
 
 ---
 
@@ -231,7 +231,27 @@ Typical use cases:
 
 ---
 
-## 11. Utility: Path Reconstruction
+## 11. K-Shortest Paths
+
+To find not just the shortest path, but the $K$ shortest paths (simple or non-simple, depending on implementation specifics, here typically allowing cycles if standard Yen's or similar, but let's check header: `k_shortest_paths` returns vectors of vertices).
+
+```cpp
+int k = 3;
+std::vector<std::vector<int>> paths = sp.k_shortest_paths(0, 5, k, INF);
+```
+
+- `std::vector<std::vector<int>> k_shortest_paths(int source, int target, int k, long long inf)`:
+  - Returns up to `k` shortest paths from `source` to `target`.
+  - Paths are sorted by ascending length.
+  - Returns empty if no path exists.
+
+Use cases:
+- Routing alternatives.
+- finding "second best" options.
+
+---
+
+## 12. Utility: Path Reconstruction
 
 In many problems you not only need distances but also the actual path.  
 You can reconstruct the path from a `parent` array using:
@@ -253,7 +273,7 @@ This pairs naturally with algorithms where you maintain `parent[v]` whenever you
 
 ---
 
-## 12. Choosing the Right Algorithm
+## 13. Choosing the Right Algorithm
 
 - Only non-negative weights:
   - Edges weights 0 or 1 → `zero_one_bfs`.

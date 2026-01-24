@@ -490,4 +490,151 @@ long long TreePathSum::query_subtree(int v) const {
     return range_query_internal(l, r);
 }
 
+TreePathMax::TreePathMax(const TreeLCA& tree, const std::vector<long long>& values)
+    : tree_(&tree),
+      n_(tree.vertex_count()),
+      size_(1),
+      data_(),
+      seg_() {
+    if (n_ <= 0) {
+        throw std::invalid_argument("TreePathMax requires positive number of vertices");
+    }
+    if (static_cast<int>(values.size()) != n_) {
+        throw std::invalid_argument("TreePathMax values size must match tree vertex count");
+    }
+    if (tree.hld_pos(0) == -1) {
+        throw std::logic_error("TreePathMax requires TreeLCA::build to be called before construction");
+    }
+    while (size_ < n_) {
+        size_ <<= 1;
+    }
+    data_.assign(n_, 0);
+    seg_.assign(2 * size_, std::numeric_limits<long long>::min());
+    for (int v = 0; v < n_; v++) {
+        int p = tree.hld_pos(v);
+        if (p < 0 || p >= n_) {
+            throw std::logic_error("Invalid HLD position in TreePathMax construction");
+        }
+        data_[p] = values[v];
+    }
+    build_from_data();
+}
+
+void TreePathMax::build_segment_tree() {
+    for (int i = 0; i < size_; i++) {
+        long long value = std::numeric_limits<long long>::min();
+        if (i < n_) {
+            value = data_[i];
+        }
+        seg_[size_ + i] = value;
+    }
+    for (int i = size_ - 1; i > 0; i--) {
+        seg_[i] = std::max(seg_[i * 2], seg_[i * 2 + 1]);
+    }
+}
+
+void TreePathMax::build_from_data() {
+    build_segment_tree();
+}
+
+void TreePathMax::point_update_internal(int idx, long long value) {
+    if (idx < 0 || idx >= n_) {
+        return;
+    }
+    data_[idx] = value;
+    int pos = size_ + idx;
+    seg_[pos] = value;
+    while (pos > 1) {
+        pos >>= 1;
+        seg_[pos] = std::max(seg_[pos * 2], seg_[pos * 2 + 1]);
+    }
+}
+
+long long TreePathMax::range_query_internal(int left, int right) const {
+    if (left < 0) {
+        left = 0;
+    }
+    if (right >= n_) {
+        right = n_ - 1;
+    }
+    if (left > right) {
+        return std::numeric_limits<long long>::min();
+    }
+    int l = left + size_;
+    int r = right + size_;
+    long long res = std::numeric_limits<long long>::min();
+    while (l <= r) {
+        if (l & 1) {
+            res = std::max(res, seg_[l]);
+            l++;
+        }
+        if (!(r & 1)) {
+            res = std::max(res, seg_[r]);
+            r--;
+        }
+        l >>= 1;
+        r >>= 1;
+    }
+    return res;
+}
+
+long long TreePathMax::get_value(int v) const {
+    if (v < 0 || v >= n_) {
+        return std::numeric_limits<long long>::min();
+    }
+    int idx = tree_->hld_pos(v);
+    if (idx < 0 || idx >= n_) {
+        return std::numeric_limits<long long>::min();
+    }
+    return data_[idx];
+}
+
+void TreePathMax::set_value(int v, long long value) {
+    if (v < 0 || v >= n_) {
+        return;
+    }
+    int idx = tree_->hld_pos(v);
+    if (idx < 0 || idx >= n_) {
+        return;
+    }
+    point_update_internal(idx, value);
+}
+
+long long TreePathMax::query_path(int u, int v) const {
+    if (u < 0 || v < 0 || u >= n_ || v >= n_) {
+        return std::numeric_limits<long long>::min();
+    }
+    std::vector<std::pair<int, int>> segments;
+    tree_->hld_decompose_path(u, v, segments);
+    long long res = std::numeric_limits<long long>::min();
+    for (const auto& seg : segments) {
+        int l = seg.first;
+        int r = seg.second;
+        if (l > r) {
+            int tmp = l;
+            l = r;
+            r = tmp;
+        }
+        res = std::max(res, range_query_internal(l, r));
+    }
+    return res;
+}
+
+long long TreePathMax::query_subtree(int v) const {
+    if (v < 0 || v >= n_) {
+        return std::numeric_limits<long long>::min();
+    }
+    int idx = tree_->hld_pos(v);
+    if (idx < 0 || idx >= n_) {
+        return std::numeric_limits<long long>::min();
+    }
+    int sz = tree_->subtree_size(v);
+    if (sz <= 0) {
+        return std::numeric_limits<long long>::min();
+    }
+    int l = idx;
+    int r = idx + sz - 1;
+    return range_query_internal(l, r);
+}
+
 }

@@ -250,6 +250,28 @@ Internally `TreePathSum`:
 - Uses `hld_decompose_path(u, v, segments)` to decompose any path into a small number of contiguous ranges.
 - Maintains a segment tree over the base array, so both path and subtree sums run in `O(log^2 n)` and `O(log n)` respectively.
 
+### 3.8 TreePathMax: Path and Subtree Maximums
+
+Similar to `TreePathSum`, `TreePathMax` supports point updates and range maximum queries.
+
+```cpp
+graphlib::TreePathMax pm(tree, values);
+
+long long m = pm.query_path(u, v);
+long long sub_max = pm.query_subtree(v);
+```
+
+- `TreePathMax(const TreeLCA& tree, const std::vector<long long>& values)`:
+  - Constructs the structure. `values` must match the tree size.
+- `long long query_path(int u, int v) const`:
+  - Returns the maximum value on the path between `u` and `v`.
+- `long long query_subtree(int v) const`:
+  - Returns the maximum value in the subtree of `v`.
+- `void set_value(int v, long long value)`:
+  - Updates the value at vertex `v`.
+- `long long get_value(int v) const`:
+  - Returns the current value at vertex `v`.
+
 ---
 
 ## 4. Example Usage

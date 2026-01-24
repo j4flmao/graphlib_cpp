@@ -256,7 +256,7 @@ std::vector<int> trail_dir = eulerian_trail_directed(g);
 
 All these functions ignore isolated vertices with degree zero. Connectivity is checked only among vertices that are incident to at least one edge.
 
-### 3.5 Global Minimum Cut (Undirected)
+### 3.7 Global Minimum Cut (Undirected)
 
 For undirected weighted graphs, you can compute the value of a global minimum cut (Stoer–Wagner style algorithm):
 
@@ -280,7 +280,7 @@ Typical use cases:
 - Network reliability and partitioning.
 - Finding sparsest cuts in small to medium graphs where an exact global cut is needed.
 
-### 3.6 Gomory–Hu Tree (All-Pairs Min-Cut)
+### 3.8 Gomory–Hu Tree (All-Pairs Min-Cut)
 
 For undirected weighted graphs where you need **minimum s–t cut values for all vertex pairs**, you can build a Gomory–Hu cut tree:
 

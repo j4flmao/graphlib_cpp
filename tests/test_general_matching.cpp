@@ -37,3 +37,24 @@ TEST(GeneralMatchingTest, WeightedMatching) {
     long long total = g.maximum_weight_matching();
     EXPECT_EQ(total, 6);
 }
+
+TEST(GeneralMatchingTest, LargeWeightedMatching) {
+    // N=24, bypasses brute force (<=20)
+    int n = 24;
+    GeneralMatching g(n);
+    
+    // Create 12 pairs (0,1), (2,3), ... with weight 100
+    long long expected_weight = 0;
+    for (int i = 0; i < n; i += 2) {
+        g.add_edge(i, i+1, 100);
+        expected_weight += 100;
+    }
+    
+    // Add noise edges with lower weight
+    for (int i = 1; i < n - 1; i += 2) {
+        g.add_edge(i, i+1, 10);
+    }
+    
+    long long total = g.maximum_weight_matching();
+    EXPECT_EQ(total, expected_weight);
+}

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "graphlib/graph_core.h"
+#include "graphlib/min_cut.h"
 #include "graphlib/shortest_path.h"
 #include "graphlib/bipartite.h"
 #include "graphlib/tree.h"

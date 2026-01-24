@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <graphlib/graphlib.h>
 #include <graphlib/shortest_path.h>
+#include <graphlib/min_cut.h>
 #include <limits>
 #include <vector>
 #include <tuple>

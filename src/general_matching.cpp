@@ -162,7 +162,7 @@ long long GeneralMatching::maximum_weight_matching() {
 
 
     // For small n, use brute force (bitmask DP) to guarantee optimality
-    if (n <= 14) {
+    if (n <= 20) {
         std::vector<long long> dp(1LL << n, -1);
         std::function<long long(int)> solve;
         solve = [&](int mask) -> long long {
@@ -248,8 +248,8 @@ long long GeneralMatching::maximum_weight_matching() {
     std::vector<int> match(N, -1);
     std::vector<int> slackx(N);
     std::vector<long long> slack(N);
-    std::vector<int> par(N);
-    std::vector<int> q(N);
+    std::vector<int> par(N, -1);
+    std::vector<int> q;
     std::vector<int> st(N);
     std::vector<int> flower_from(N);
     std::vector<std::vector<int>> flower(N);
@@ -329,16 +329,17 @@ long long GeneralMatching::maximum_weight_matching() {
     };
 
     auto add_to_tree = [&](int v, int root, std::vector<int>& S, std::vector<int>& vis) {
-        (void)root;
         (void)vis;
         S[v] = 1;
-        par[v] = root;
-        for (int u = 0; u < N; u++) {
-            if (g[v][u] && st[v] != st[u] && match[v] != u) {
-                long long delta = lab[v] + lab[u] - w[st[v]][st[u]];
-                if (delta < slack[u]) {
-                    slack[u] = delta;
-                    slackx[u] = v;
+        int u = match[v];
+        par[u] = root;
+        par[v] = u;
+        for (int i = 0; i < N; i++) {
+            if (g[v][i] && st[v] != st[i] && match[v] != i) {
+                long long delta = lab[st[v]] + lab[st[i]] - w[v][i];
+                if (delta < slack[i]) {
+                    slack[i] = delta;
+                    slackx[i] = v;
                 }
             }
         }
@@ -363,7 +364,7 @@ long long GeneralMatching::maximum_weight_matching() {
     std::vector<int> S(N);
     std::vector<int> vis(N);
 
-    auto bfs = [&](int root) {
+    auto bfs = [&](int root) -> bool {
         std::fill(S.begin(), S.end(), 0);
         std::fill(vis.begin(), vis.end(), 0);
         std::fill(slack.begin(), slack.end(), std::numeric_limits<long long>::max());
@@ -372,13 +373,13 @@ long long GeneralMatching::maximum_weight_matching() {
         for(int i=0; i<N; ++i) st[i] = i;
 
         int qh = 0;
-        int qt = 0;
-        q[qt++] = root;
+        q.clear();
+        q.push_back(root);
         S[root] = 1;
         par[root] = -1;
         
         while (true) {
-            while (qh < qt) {
+            while (qh < q.size()) {
                 int v = q[qh++];
                 // Skip if v is no longer a representative (contracted)
                 if (st[v] != v) continue;
@@ -390,26 +391,21 @@ long long GeneralMatching::maximum_weight_matching() {
                           if (S[st[u]] == 1) { // u is EVEN -> Blossom
                              long long cur_slack = r / 2;
                              if (cur_slack == 0) {
-                                 blossom_contract(v, u, root, S, vis);
-                                 // After contraction, the new blossom base should be pushed to queue if not already?
-                                 // The base is one of the ancestors. It is already in S.
-                                 // But the newly contracted nodes (formerly ODD) are now EVEN and need scanning.
-                                 // We can push them to queue.
-                                 for(int i=0; i<N; ++i) {
-                                     if (st[i] == st[v] && S[i] == 1 && std::find(q.begin()+qh, q.begin()+qt, i) == q.begin()+qt) {
-                                         // Actually simpler: just scan everything again or rely on q.
-                                         // The contracted nodes are marked S=1 in blossom_contract.
-                                         // We should push them.
-                                         if (!std::count(q.begin(), q.begin() + qt, i)) q[qt++] = i;
-                                     }
-                                 }
-                             } 
+                                blossom_contract(v, u, root, S, vis);
+                                for(int i=0; i<N; ++i) {
+                                    if (st[i] == st[v] && S[i] == 1) {
+                                        bool seen = false;
+                                        for(int x : q) if(x == i) { seen = true; break; }
+                                        if (!seen) q.push_back(i);
+                                    }
+                                }
+                            } 
                              // else: wait for delta to reduce slack
                          } else if (match[u] == -1) { // u is Free
                              if (r == 0) {
                                  augment_path(v, u);
-                                 return;
-                             }
+                                return true;
+                            }
                              if (r < slack[u]) {
                                  slack[u] = r;
                                  slackx[u] = v;
@@ -419,9 +415,9 @@ long long GeneralMatching::maximum_weight_matching() {
                              if (S[st[match[u]]] == 0) {
                                  if (r == 0) {
                                      add_to_tree(match[u], v, S, vis);
-                                     if (!std::count(q.begin(), q.begin() + qt, match[u])) {
-                                        q[qt++] = match[u];
-                                     }
+                                    if (std::find(q.begin(), q.end(), match[u]) == q.end()) {
+                                       q.push_back(match[u]);
+                                    }
                                  } else if (r < slack[u]) {
                                      slack[u] = r;
                                      slackx[u] = v;
@@ -444,17 +440,17 @@ long long GeneralMatching::maximum_weight_matching() {
             
             // 2. Blossom formation slack (S-S edges)
             for(int i=0; i<N; ++i) {
-                if (S[st[i]] == 1 && st[i] == i) {
+                if (S[st[i]] == 1) {
                     for(int j=0; j<N; ++j) {
-                        if (S[st[j]] == 1 && st[j] == j && st[i] != st[j] && g[i][j]) {
-                            long long r = lab[i] + lab[j] - w[st[i]][st[j]];
+                        if (S[st[j]] == 1 && st[i] != st[j] && g[i][j]) {
+                            long long r = lab[st[i]] + lab[st[j]] - w[i][j];
                             d = std::min(d, r / 2);
                         }
                     }
                 }
             }
 
-            if (d == std::numeric_limits<long long>::max()) return; // No path
+            if (d == std::numeric_limits<long long>::max()) return false; // No path
             
             // Update labels
                 for(int i=0; i<N; ++i) {
@@ -485,11 +481,11 @@ long long GeneralMatching::maximum_weight_matching() {
                     int v = slackx[i];
                     if (match[i] == -1) {
                          augment_path(v, i);
-                         return;
+                         return true;
                     } else {
                          add_to_tree(match[i], v, S, vis);
-                         if (!std::count(q.begin(), q.begin() + qt, match[i])) {
-                             q[qt++] = match[i];
+                         if (std::find(q.begin(), q.end(), match[i]) == q.end()) {
+                             q.push_back(match[i]);
                          }
                     }
                 }
@@ -511,16 +507,19 @@ long long GeneralMatching::maximum_weight_matching() {
     }
 
     // Greedily find augmenting paths
-    for (int i = 0; i < n; ++i) {
+    std::vector<int> failed(N, 0);
+    for (int i = 0; i < N; ++i) {
         int root = -1;
         for (int v = 0; v < N; ++v) {
-            if (match[v] == -1) {
+            if (match[v] == -1 && !failed[v]) {
                 root = v;
                 break;
             }
         }
         if (root == -1) break;
-        bfs(root);
+        if (!bfs(root)) {
+            failed[root] = 1;
+        }
     }
 
     long long total = 0;

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-set(GRAPHLIB_VERSION "1.0.3" CACHE STRING "GraphLib version")
+set(GRAPHLIB_VERSION "1.0.4" CACHE STRING "GraphLib version")
 project(GraphLib VERSION ${GRAPHLIB_VERSION} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -21,11 +21,33 @@ set(GRAPHLIB_SOURCES
     src/mst.cpp
     src/connectivity.cpp
     src/scc.cpp
+    src/dominator_tree.cpp
+    src/centroid_decomposition.cpp
     src/splay_tree.cpp
     src/version.cpp
     src/shortest_path.cpp
     src/general_matching.cpp
     src/tree.cpp
+    src/np_hard.cpp
+    src/tree_algo.cpp
+    src/steiner_tree.cpp
+    src/link_cut_tree.cpp
+    src/dsu_rollback.cpp
+    src/directed_mst.cpp
+    src/dynamic_connectivity.cpp
+    src/graph_measures.cpp
+    src/planarity.cpp
+    src/min_cut.cpp
+    src/graph_generator.cpp
+    src/k_shortest_paths.cpp
+    src/bipartite_matching.cpp
+    src/chordal.cpp
+    src/bipartite.cpp
+    src/mst.cpp
+    src/tree_decomposition.cpp
+    src/block_cut_tree.cpp
+    src/cycle_algo.cpp
+    src/isomorphism.cpp
 )
 
 set(GRAPHLIB_HEADERS
@@ -41,6 +63,24 @@ set(GRAPHLIB_HEADERS
     include/graphlib/splay_tree.h
     include/graphlib/general_matching.h
     include/graphlib/tree.h
+    include/graphlib/np_hard.h
+    include/graphlib/tree_algo.h
+    include/graphlib/link_cut_tree.h
+    include/graphlib/dsu_rollback.h
+    include/graphlib/directed_mst.h
+    include/graphlib/dynamic_connectivity.h
+    include/graphlib/graph_measures.h
+    include/graphlib/planarity.h
+    include/graphlib/min_cut.h
+    include/graphlib/steiner_tree.h
+    include/graphlib/graph_generator.h
+    include/graphlib/k_shortest_paths.h
+    include/graphlib/bipartite_matching.h
+    include/graphlib/chordal.h
+    include/graphlib/tree_decomposition.h
+    include/graphlib/block_cut_tree.h
+    include/graphlib/cycle_algo.h
+    include/graphlib/isomorphism.h
     include/graphlib/graphlib.h
 )
 

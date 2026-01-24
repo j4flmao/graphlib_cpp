@@ -11,6 +11,7 @@ private:
     struct Edge {
         int to;
         long long weight;
+        bool enabled;
         Edge* next;
 
         Edge(int to, long long weight);
@@ -40,6 +41,14 @@ public:
     std::vector<std::vector<long long>> johnson(long long inf, bool& has_negative_cycle);
     std::vector<long long> multi_source_dijkstra(const std::vector<int>& sources, long long inf);
     long double minimum_mean_cycle(bool& has_cycle);
+    
+    // Returns the K shortest paths from source to target.
+    // Each path is a vector of vertex indices.
+    // Returns empty vector if no path exists or k <= 0.
+    std::vector<std::vector<int>> k_shortest_paths(int source, int target, int k, long long inf);
+
+private:
+    std::vector<long long> dijkstra_with_path(int source, int target, long long inf, std::vector<int>& parent);
 };
 
 GRAPHLIB_API std::vector<int> reconstruct_path(int source, int target, const std::vector<int>& parent);
