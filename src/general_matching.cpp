@@ -297,6 +297,7 @@ long long GeneralMatching::maximum_weight_matching() {
 
     auto blossom_contract = [&](int v, int u, int root, std::vector<int>& S, std::vector<int>& vis) {
         (void)root;
+        (void)vis;
         int b = lca(v, u);
         
         std::vector<int> blossom_bases;

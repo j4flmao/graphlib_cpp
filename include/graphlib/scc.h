@@ -53,10 +53,14 @@ private:
     };
 
     int n_;
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4251)
+#endif
     std::vector<Implication> implications_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
     int encode_literal(int var, bool value) const;
     void add_implication(int from, int to);

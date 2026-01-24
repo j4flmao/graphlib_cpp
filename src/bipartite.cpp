@@ -15,6 +15,7 @@ bool BipartiteGraph::is_bipartite() const {
 }
 
 long long BipartiteGraph::hungarian_min_cost(long long max_cost_limit) {
+    (void)max_cost_limit;
     int source = vertex_count();
     int sink = source + 1;
     MaxFlow mf(sink + 1);
@@ -58,7 +59,6 @@ int BipartiteGraph::maximum_matching() {
 GRAPHLIB_API std::vector<int> is_bipartite(const Graph& g) {
     int n = g.vertex_count();
     std::vector<int> color(n, -1);
-    bool possible = true;
 
     for (int i = 0; i < n; ++i) {
         if (color[i] != -1) continue;

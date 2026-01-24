@@ -651,7 +651,7 @@ std::vector<std::vector<int>> ShortestPath::k_shortest_paths(int source, int tar
     };
 
     int processed_idx = 0;
-    while (A.size() < k) {
+    while (A.size() < (size_t)k) {
         // The path to deviate from (always the last added path in previous iteration logic, 
         // but here we process sequentially)
         const std::vector<int>& prev_path = A[processed_idx];

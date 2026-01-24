@@ -67,15 +67,19 @@ public:
 
 private:
     int n_;
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable: 4251)
+#endif
     std::vector<int> parent_;
     std::vector<int> depth_;
     std::vector<int> heavy_;
     std::vector<int> head_;
     std::vector<int> pos_;
     std::vector<int> sz_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
     int cur_pos_;
     
     void dfs_sz(const Graph& tree, int u, int p);

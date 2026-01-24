@@ -32,6 +32,7 @@ void DominatorTree::dfs(int u) {
 }
 
 int DominatorTree::find(int u, bool compress) {
+    (void)compress;
     if (dsu_ancestor_[u] == u) {
         return u;
     }
