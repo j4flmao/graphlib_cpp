@@ -1,6 +1,7 @@
 #include "graphlib/tree.h"
 #include <queue>
 #include <stdexcept>
+#include <limits>
 
 namespace graphlib {
 

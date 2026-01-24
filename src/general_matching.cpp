@@ -380,7 +380,7 @@ long long GeneralMatching::maximum_weight_matching() {
         par[root] = -1;
         
         while (true) {
-            while (qh < q.size()) {
+            while ((size_t)qh < q.size()) {
                 int v = q[qh++];
                 // Skip if v is no longer a representative (contracted)
                 if (st[v] != v) continue;
