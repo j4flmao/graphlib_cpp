@@ -398,11 +398,11 @@ long long chinese_postman(const Graph& g) {
     std::queue<int> q;
     q.push(start_node);
     visited[start_node] = true;
-    int visited_count = 0;
+    // int visited_count = 0;
     
     while(!q.empty()) {
         int u = q.front(); q.pop();
-        visited_count++;
+        // visited_count++;
         Edge* e = g.get_edges(u);
         while(e) {
             if(!visited[e->to]) {

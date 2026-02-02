@@ -70,7 +70,7 @@ namespace {
 
     void dfs_biconnected(const Graph& g, int u, int p, std::vector<int>& tin, std::vector<int>& low, int& timer, std::vector<std::pair<int, int>>& st, std::vector<std::vector<int>>& comps) {
         tin[u] = low[u] = timer++;
-        int children = 0;
+        // int children = 0;
         Edge* e = g.get_edges(u);
         while (e) {
             int v = e->to;
@@ -101,7 +101,7 @@ namespace {
                     component.erase(std::unique(component.begin(), component.end()), component.end());
                     comps.push_back(component);
                 }
-                children++;
+                // children++;
             }
             e = e->next;
         }

@@ -224,13 +224,13 @@ GRAPHLIB_API std::vector<int> max_bipartite_matching_dfs(const Graph& g) {
         return false;
     };
 
-    int result = 0;
+    // int result = 0;
     // Iterate only over one partition (e.g. 0)
     for (int i = 0; i < n; ++i) {
         if (partition[i] == 0) {
             vis.assign(n, false);
             if (dfs(i)) {
-                result++;
+                // result++;
             }
         }
     }

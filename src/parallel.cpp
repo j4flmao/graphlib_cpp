@@ -86,7 +86,7 @@ std::vector<int> parallel_bfs(const Graph& g, int source, ExecutionPolicy policy
             int u = frontier[i];
             
             for (Edge* e = g.get_edges(u); e; e = e->next) {
-                int expected = -1;
+                // int expected = -1;
                 // Atomic compare-and-swap simulation using mutex per vertex (simplified)
                 if (dist[e->to] == -1) {
                     dist[e->to] = dist[u] + 1;
@@ -442,6 +442,7 @@ std::vector<long long> parallel_sssp_delta_stepping(const Graph& g, int source, 
             
             // Process heavy edges
             for (int v : light_relaxations) {
+                (void)v;
                 // Find the edge weight (simplified - should track properly)
             }
         }

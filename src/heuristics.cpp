@@ -102,8 +102,7 @@ GRAPHLIB_API std::pair<long long, std::vector<int>> tsp_simulated_annealing(cons
             int curr_v = current_tour[v];
             int next_v = current_tour[(v + 1) % n];
 
-            long long old_seg_cost = dist[prev_u][curr_u] + dist[curr_v][next_v];
-            long long new_seg_cost = dist[prev_u][curr_v] + dist[curr_u][next_v];
+
             
             // Inside the segment, costs don't change for symmetric TSP (undirected).
             // Assuming undirected graph here.

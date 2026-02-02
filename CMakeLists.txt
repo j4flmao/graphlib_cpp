@@ -11,6 +11,10 @@ option(BUILD_SHARED_LIBS "Build shared library (DLL/SO)" ON)
 option(BUILD_TESTS "Build test suite" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 
+if(MSVC)
+    add_compile_options(/wd4251)
+endif()
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(GRAPHLIB_SOURCES

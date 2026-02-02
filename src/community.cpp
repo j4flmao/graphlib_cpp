@@ -252,7 +252,7 @@ GRAPHLIB_API std::map<std::pair<int, int>, int> k_truss_decomposition(const Grap
     // Iterative peeling O(m^1.5) is standard.
     
     int m = (int)edges.size();
-    int k = 2; // k-truss starts at k=3 (triangle support >= 1)
+    // int k = 2; // k-truss starts at k=3 (triangle support >= 1)
                // Edges with support=0 belong to 2-truss (just edges).
                // We will peal edges with support <= k-2.
     

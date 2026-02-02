@@ -543,10 +543,10 @@ std::vector<int> longest_cycle(const Graph& g) {
         int best_len = 0;
         int best_mask = 0;
         int best_end = -1;
-        int best_start = -1;
+        // int best_start = -1;
         
         for (int mask = 1; mask < (1 << n); ++mask) {
-            int len = __builtin_popcount(mask);
+            int len = static_cast<int>(std::bitset<32>(mask).count());
             if (len < 3) continue;
             
             for (int end = 0; end < n; ++end) {

@@ -99,7 +99,8 @@ long long dmst_recursive(int n, int root, std::vector<Edge>& edges, std::vector<
     std::vector<EdgeMapping> mapping_info;
     
     // Cycle cost contribution
-    long long cycle_cost = 0;
+    // Cycle cost contribution
+    // long long cycle_cost = 0;
     for(int i=0; i<n; ++i) {
         if (i != root && edges[min_edge[i]].v == i && group[edges[min_edge[i]].u] == group[i] && min_edge[i] != -1) {
              // This edge is part of a cycle (u and v in same group means cycle because we only grouped cycle nodes)

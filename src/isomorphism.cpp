@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <vector>
 #include <numeric>
+#include <string>
+#include "graphlib/tree_algo.h"
 
 namespace graphlib {
 
@@ -296,43 +298,9 @@ GRAPHLIB_API std::vector<std::vector<int>> find_all_subgraph_isomorphisms(const 
 
 
 // Helper for Tree Isomorphism
-std::vector<int> get_tree_centers(const Graph& g) {
-    int n = g.vertex_count();
-    if (n == 0) return {};
-    if (n == 1) return {0};
-    
-    std::vector<int> degree(n, 0);
-    std::vector<int> leaves;
-    for(int i=0; i<n; ++i) {
-        int d = 0;
-        for(Edge* e = g.get_edges(i); e; e = e->next) {
-            // Treat as undirected
-            d++; 
-        }
-        degree[i] = d;
-        if (d <= 1) leaves.push_back(i);
-    }
-    
-    int remaining = n;
-    while (remaining > 2) {
-        remaining -= (int)leaves.size();
-        std::vector<int> next_leaves;
-        for(int leaf : leaves) {
-            degree[leaf] = 0; // Remove
-            for(Edge* e = g.get_edges(leaf); e; e = e->next) {
-                int neighbor = e->to;
-                if (degree[neighbor] > 0) {
-                     degree[neighbor]--;
-                     if (degree[neighbor] == 1) {
-                         next_leaves.push_back(neighbor);
-                     }
-                }
-            }
-        }
-        leaves = next_leaves;
-    }
-    return leaves;
-}
+
+
+// Canonical encoding of a rooted tree
 
 // Canonical encoding of a rooted tree
 // Using string representation: "(" + sorted(child_codes) + ")"
