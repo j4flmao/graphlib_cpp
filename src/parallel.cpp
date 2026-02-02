@@ -543,8 +543,8 @@ std::vector<int> parallel_label_propagation(const Graph& g, int max_iterations, 
         // Random shuffle order
         // Random shuffle order
         std::random_device rd;
-        std::mt19937 g(rd());
-        std::shuffle(order.begin(), order.end(), g);
+        std::mt19937 rng(rd());
+        std::shuffle(order.begin(), order.end(), rng);
         
         if (policy == ExecutionPolicy::Sequential) {
             for (int u : order) {

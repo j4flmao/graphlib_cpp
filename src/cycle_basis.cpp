@@ -9,6 +9,7 @@
 #include <functional>
 #include <limits>
 #include <bitset>
+#include <map>
 
 namespace graphlib {
 

@@ -24,6 +24,7 @@ public:
         int to;
         long long weight;
         
+        MultiEdge() : id(-1), from(-1), to(-1), weight(0) {}
         MultiEdge(int id, int from, int to, long long weight);
     };
 

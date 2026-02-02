@@ -6,6 +6,7 @@
 #include <vector>
 #include <tuple>
 #include <utility>
+#include <string>
 
 namespace graphlib {
 

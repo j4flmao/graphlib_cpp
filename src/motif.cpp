@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <numeric>
 #include <queue>
+#include <functional>
 
 namespace graphlib {
 
