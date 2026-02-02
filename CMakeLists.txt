@@ -42,12 +42,24 @@ set(GRAPHLIB_SOURCES
     src/k_shortest_paths.cpp
     src/bipartite_matching.cpp
     src/chordal.cpp
-    src/bipartite.cpp
-    src/mst.cpp
     src/tree_decomposition.cpp
     src/block_cut_tree.cpp
     src/cycle_algo.cpp
     src/isomorphism.cpp
+    src/heuristics.cpp
+    src/spectral.cpp
+    src/community.cpp
+    src/bidirectional_dijkstra.cpp
+    src/cycle_basis.cpp
+    src/graph_io.cpp
+    src/random_walk.cpp
+    src/motif.cpp
+    src/sparse_graph.cpp
+    src/temporal_graph.cpp
+    src/signed_graph.cpp
+    src/multigraph.cpp
+    src/parallel.cpp
+    src/hypergraph.cpp
 )
 
 set(GRAPHLIB_HEADERS
@@ -81,6 +93,20 @@ set(GRAPHLIB_HEADERS
     include/graphlib/block_cut_tree.h
     include/graphlib/cycle_algo.h
     include/graphlib/isomorphism.h
+    include/graphlib/heuristics.h
+    include/graphlib/spectral.h
+    include/graphlib/community.h
+    include/graphlib/bidirectional_dijkstra.h
+    include/graphlib/cycle_basis.h
+    include/graphlib/graph_io.h
+    include/graphlib/random_walk.h
+    include/graphlib/motif.h
+    include/graphlib/sparse_graph.h
+    include/graphlib/temporal_graph.h
+    include/graphlib/signed_graph.h
+    include/graphlib/multigraph.h
+    include/graphlib/parallel.h
+    include/graphlib/hypergraph.h
     include/graphlib/graphlib.h
 )
 

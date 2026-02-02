@@ -699,14 +699,6 @@ double modularity(const Graph& g, const std::vector<int>& communities) {
     if (n == 0) return 0.0;
     if (communities.size() != (size_t)n) return 0.0;
 
-    double m = 0; // Total weight of edges (or number of edges in unweighted)
-    // Actually modularity formula usually uses 2m.
-    // For directed/weighted, we sum weights.
-    // Assuming undirected graph for standard modularity def, but this works for directed if we interpret m as total degree/2?
-    // Standard modularity is for undirected.
-    // Let's assume undirected graph logic (sum of degrees / 2 = m).
-    // Or just iterate all edges.
-
     // Calculate degrees and m
     std::vector<double> k(n, 0.0);
     double two_m = 0.0;
@@ -714,7 +706,7 @@ double modularity(const Graph& g, const std::vector<int>& communities) {
     for (int u = 0; u < n; ++u) {
         Edge* e = g.get_edges(u);
         while(e) {
-            double w = e->weight; // Assuming weight 1 if not weighted? Graphlib uses double weight.
+            double w = static_cast<double>(e->weight); // Assuming weight 1 if not weighted? Graphlib uses double weight.
             // If weight is 0 or uninitialized, might be issue.
             // Usually we assume positive weights.
             k[u] += w;
@@ -724,8 +716,6 @@ double modularity(const Graph& g, const std::vector<int>& communities) {
     }
 
     if (two_m == 0) return 0.0;
-
-    double Q = 0.0;
 
     // Iterate over all edges for A_ij part
     // Q = (1/2m) * sum_{ij} [ A_ij - (k_i * k_j) / (2m) ] * delta(c_i, c_j)

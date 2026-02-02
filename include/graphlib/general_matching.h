@@ -1,4 +1,4 @@
-﻿#ifndef GRAPHLIB_GENERAL_MATCHING_H
+#ifndef GRAPHLIB_GENERAL_MATCHING_H
 #define GRAPHLIB_GENERAL_MATCHING_H
 
 #include "export.h"
@@ -11,6 +11,10 @@ public:
     explicit GeneralMatching(int n);
     int maximum_matching();
     long long maximum_weight_matching();
+    std::vector<int> get_mate() const;
+
+private:
+    std::vector<int> match_;
 };
 
 }

@@ -36,7 +36,17 @@ All code samples assume C++17 or later and **0-based vertex indices**.
 - [22. Minimum Cut (`min_cut.h`)](#22-minimum-cut-min_cuth)
 - [23. Cycle Algorithms (`cycle_algo.h`)](#23-cycle-algorithms-cycle_algoh)
 - [24. Tree Decomposition (`tree_decomposition.h`)](#24-tree-decomposition-tree_decompositionh)
-- [25. Master Header and Module Includes](#25-master-header-and-module-includes)
+- [25. Cycle Basis (`cycle_basis.h`)](#25-cycle-basis-cycle_basish)
+- [26. Graph I/O (`graph_io.h`)](#26-graph-io-graph_ioh)
+- [27. Random Walks (`random_walk.h`)](#27-random-walks-random_walkh)
+- [28. Network Motifs (`motif.h`)](#28-network-motifs-motifh)
+- [29. Sparse Graph Formats (`sparse_graph.h`)](#29-sparse-graph-formats-sparse_graphh)
+- [30. Temporal Graphs (`temporal_graph.h`)](#30-temporal-graphs-temporal_graphh)
+- [31. Signed Graphs (`signed_graph.h`)](#31-signed-graphs-signed_graphh)
+- [32. Multigraphs (`multigraph.h`)](#32-multigraphs-multigraphh)
+- [33. Hypergraphs (`hypergraph.h`)](#33-hypergraphs-hypergraphh)
+- [34. Parallel Algorithms (`parallel.h`)](#34-parallel-algorithms-parallelh)
+- [35. Master Header and Module Includes](#35-master-header-and-module-includes)
 
 This file focuses on **how to call the code**. For theoretical details, please refer to standard algorithm textbooks (CLRS, etc.).
 
@@ -424,6 +434,22 @@ API module documents and examples:
 - [DOCS_MIN_CUT.md](DOCS_MIN_CUT.md) – Global min-cut and Gomory-Hu.
 - [DOCS_CYCLE_ALGO.md](DOCS_CYCLE_ALGO.md) – Minimum mean cycle.
 - [DOCS_TREE_DECOMPOSITION.md](DOCS_TREE_DECOMPOSITION.md) – Tree decomposition.
+- [DOCS_DOMINATOR_TREE.md](DOCS_DOMINATOR_TREE.md) – Dominator Tree.
+- [DOCS_BLOCK_CUT_TREE.md](DOCS_BLOCK_CUT_TREE.md) – Block-Cut Tree.
+- [DOCS_LINK_CUT_TREE.md](DOCS_LINK_CUT_TREE.md) – Link-Cut Tree (Dynamic trees).
+- [DOCS_STEINER_TREE.md](DOCS_STEINER_TREE.md) – Steiner Tree (NP-hard).
+- [DOCS_PLANARITY.md](DOCS_PLANARITY.md) – Planarity Testing & Embedding.
+- [DOCS_DIRECTED_MST.md](DOCS_DIRECTED_MST.md) – Directed MST (Arborescence).
+- [DOCS_TWO_SAT.md](DOCS_TWO_SAT.md) – 2-Satisfiability.
+- [DOCS_TREE_CENTROID.md](DOCS_TREE_CENTROID.md) – Centroid Decomposition.
+- [DOCS_TREE_ISOMORPHISM.md](DOCS_TREE_ISOMORPHISM.md) – Tree Isomorphism (AHU).
+- [DOCS_TREE_ALGO.md](DOCS_TREE_ALGO.md) – Tree Algorithms (Diameter, MWIS, MDS).
+- [DOCS_CLIQUE.md](DOCS_CLIQUE.md) – Maximum Clique (Bron-Kerbosch).
+- [DOCS_COLORING.md](DOCS_COLORING.md) – Graph Coloring (DSATUR).
+- [DOCS_NP_HARD.md](DOCS_NP_HARD.md) – NP-Hard Problems (TSP, Chinese Postman).
+- [DOCS_MULTIGRAPH.md](DOCS_MULTIGRAPH.md) – Multigraphs.
+- [DOCS_COMMUNITY.md](DOCS_COMMUNITY.md) – Community Detection (Louvain).
+- [DOCS_HYPERGRAPH.md](DOCS_HYPERGRAPH.md) – Hypergraphs.
 
 ---
 

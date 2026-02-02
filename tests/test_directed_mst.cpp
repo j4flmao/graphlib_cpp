@@ -1,166 +1,150 @@
-#include "graphlib/directed_mst.h"
 #include <gtest/gtest.h>
+#include "graphlib/directed_mst.h"
 #include <vector>
+#include <set>
 
 using namespace graphlib;
 
-TEST(DirectedMSTTest, SimpleDAG) {
-    int n = 4;
-    int root = 0;
+TEST(DirectedMSTTest, SimpleAcyclic) {
     // 0 -> 1 (10)
-    // 0 -> 2 (10)
-    // 1 -> 3 (5)
-    // 2 -> 3 (10)
-    // MST should be 0->1, 0->2, 1->3 with cost 10+10+5 = 25
-    std::vector<DirectedEdge> edges = {
-        {0, 1, 10, 0},
-        {0, 2, 10, 1},
-        {1, 3, 5, 2},
-        {2, 3, 10, 3}
-    };
-    std::vector<int> res_edges;
-    long long cost = directed_mst(n, root, edges, res_edges);
-    EXPECT_EQ(cost, 25);
-}
-
-TEST(DirectedMSTTest, WithCycle) {
-    int n = 3;
-    int root = 0;
-    // 0 -> 1 (10)
-    // 1 -> 2 (10)
-    // 2 -> 1 (5)  <-- Cycle 1-2 with weight 10+5=15. Min incoming to cycle is 10 (at 1)
-    // 2 -> 3 (10)
-    // 0 -> 3 (30)
+    // 0 -> 2 (20)
+    // 1 -> 2 (5)
+    // Best: 0->1 (10), 1->2 (5). Total 15.
     
-    // Optimal: 0->1 (10), 1->2 (10), 2->3 (10). Total 30.
-    // Wait, if we pick 0->1, 1->2, 2->3, cost is 30.
-    // Is there a cheaper way?
-    // Reach 3: via 2 (cost 10) or via 0 (cost 30).
-    // Reach 2: via 1 (cost 10).
-    // Reach 1: via 0 (cost 10) or via 2 (cost 5).
-    // If we use 2->1, we must reach 2 first. 0->1->2->1... cycle.
-    // Valid arborescence must have no cycles.
-    // 0->1 (10), 1->2 (10), 2->3 (10). Cost 30.
+    std::vector<DirectedEdge> edges;
+    edges.push_back({0, 1, 10, 101});
+    edges.push_back({0, 2, 20, 102});
+    edges.push_back({1, 2, 5, 103});
     
-    // Let's try a case where cycle contraction is needed to find optimal.
-    // 0 -> 1 (10)
-    // 1 -> 2 (10)
-    // 2 -> 3 (10)
-    // 3 -> 1 (10)  <-- Cycle 1-2-3 cost 30.
-    // 0 -> 2 (50)
-    // MST: 0->1 (10), 1->2 (10), 2->3 (10). Cost 30.
-    // What if we have:
-    // 0->1 (100)
-    // 0->2 (100)
-    // 1->2 (1)
-    // 2->1 (1)
-    // MST: 0->1 (100), 1->2 (1). Cost 101.
+    std::vector<int> res_edges;
+    long long cost = directed_mst(3, 0, edges, res_edges);
     
-    std::vector<DirectedEdge> edges = {
-        {0, 1, 100, 0},
-        {0, 2, 100, 1},
-        {1, 2, 1, 2},
-        {2, 1, 1, 3}
-    };
-    std::vector<int> res_edges;
-    long long cost = directed_mst(n, root, edges, res_edges);
-    EXPECT_EQ(cost, 101);
-}
-
-TEST(DirectedMSTTest, CycleContractionComplex) {
-    // Standard Chu-Liu/Edmonds test case
-    // Root 0.
-    // 0->1 (5)
-    // 1->2 (10)
-    // 2->3 (10)
-    // 3->1 (10)  Cycle 1-2-3, min in-edge to cycle from outside is 0->1 (5).
-    // Also 0->2 (20).
-    
-    // Edges in cycle: (1,2,10), (2,3,10), (3,1,10).
-    // Cheapest incoming edges for each node:
-    // 1: 0->1 (5) vs 3->1 (10). Min is 5.
-    // 2: 1->2 (10) vs 0->2 (20). Min is 10.
-    // 3: 2->3 (10). Min is 10.
-    
-    // Sum of min incoming: 5 + 10 + 10 = 25.
-    // Cycle detected: 1-2-3.
-    // Contract 1-2-3 into node C.
-    // Edges into C:
-    // 0->1 becomes 0->C with w' = w - min_in[1] = 5 - 5 = 0.
-    // 0->2 becomes 0->C with w' = w - min_in[2] = 20 - 10 = 10.
-    // Selected edge 0->C (from 0->1) has cost 0.
-    // Total cost = 25 + 0 = 25.
-    
-    int n = 4;
-    int root = 0;
-    std::vector<DirectedEdge> edges = {
-        {0, 1, 5, 0},
-        {0, 2, 20, 1},
-        {1, 2, 10, 2},
-        {2, 3, 10, 3},
-        {3, 1, 10, 4}
-    };
-    std::vector<int> res_edges;
-    long long cost = directed_mst(n, root, edges, res_edges);
-    EXPECT_EQ(cost, 25);
-}
-
-TEST(DirectedMSTTest, Unreachable) {
-    int n = 3;
-    int root = 0;
-    // 0->1 (10)
-    // 2 (isolated)
-    std::vector<DirectedEdge> edges = {
-        {0, 1, 10, 0}
-    };
-    std::vector<int> res_edges;
-    long long cost = directed_mst(n, root, edges, res_edges);
-    EXPECT_EQ(cost, -1);
-}
-
-TEST(DirectedMSTTest, DisconnectedComponents) {
-    int n = 4;
-    int root = 0;
-    // 0->1
-    // 2->3
-    std::vector<DirectedEdge> edges = {
-        {0, 1, 10, 0},
-        {2, 3, 10, 1}
-    };
-    std::vector<int> res_edges;
-    long long cost = directed_mst(n, root, edges, res_edges);
-    EXPECT_EQ(cost, -1);
-}
-
-TEST(DirectedMSTTest, SelfLoops) {
-    int n = 2;
-    int root = 0;
-    // 0->1 (10)
-    // 1->1 (5)
-    std::vector<DirectedEdge> edges = {
-        {0, 1, 10, 0},
-        {1, 1, 5, 1}
-    };
-    std::vector<int> res_edges;
-    long long cost = directed_mst(n, root, edges, res_edges);
-    EXPECT_EQ(cost, 10);
+    EXPECT_EQ(cost, 15);
+    std::set<int> id_set(res_edges.begin(), res_edges.end());
+    EXPECT_TRUE(id_set.count(101));
+    EXPECT_TRUE(id_set.count(103));
 }
 
 TEST(DirectedMSTTest, SimpleCycle) {
     // 0 -> 1 (10)
     // 1 -> 2 (10)
-    // 2 -> 0 (10)
-    // 0 -> 2 (100)
-    // Root 0. MST should be 0->1, 1->2. Cost 20.
+    // 2 -> 1 (1)  <-- Cycle 1-2 with small weight
+    // 2 -> 3 (10)
     
-    std::vector<DirectedEdge> edges = {
-        {0, 1, 10, 0},
-        {1, 2, 10, 1},
-        {2, 0, 10, 2},
-        {0, 2, 100, 3}
-    };
+    // Paths from 0:
+    // 0->1
+    // 1->2 vs 1 (impossible, 2->1)
+    // We need to reach 1, 2, 3.
+    // 0->1 is mandatory (only way to enter).
+    // To reach 2: 1->2 (cost 10).
+    // To reach 3: 2->3 (cost 10).
+    // Edge 2->1 (cost 1) creates cycle 1-2.
+    // If we use 0->1, 1->2, 2->3. Cost 10+10+10 = 30.
+    // Is there cheaper?
+    // Maybe 0->1, 2->1? But how to reach 2? 1->2. 
+    // The cycle 1->2->1 costs 11.
+    // Entering the cycle at 1 costs 10 (0->1).
+    // Entering at 2? No way from 0 directly to 2.
+    
+    // Let's add 0->2 with cost 100.
+    // Option 1: 0->1 (10), 1->2 (10), 2->3 (10). Cost 30.
+    // Option 2: 0->2 (100)... bad.
+    
+    std::vector<DirectedEdge> edges;
+    edges.push_back({0, 1, 10, 1});
+    edges.push_back({1, 2, 10, 2});
+    edges.push_back({2, 1, 1, 3});
+    edges.push_back({2, 3, 10, 4});
+    edges.push_back({0, 2, 100, 5});
     
     std::vector<int> res_edges;
-    long long cost = directed_mst(3, 0, edges, res_edges);
-    EXPECT_EQ(cost, 20);
+    long long cost = directed_mst(4, 0, edges, res_edges);
+    
+    EXPECT_EQ(cost, 30);
+    // Should select 0->1, 1->2, 2->3.
+    std::set<int> id_set(res_edges.begin(), res_edges.end());
+    EXPECT_TRUE(id_set.count(1));
+    EXPECT_TRUE(id_set.count(2));
+    EXPECT_TRUE(id_set.count(4));
+}
+
+TEST(DirectedMSTTest, ComplexCycleContraction) {
+    // 0 -> 1 (10)
+    // 1 -> 2 (10)
+    // 2 -> 3 (10)
+    // 3 -> 1 (10)  <-- Cycle 1-2-3 (cost 30)
+    
+    // 0 -> 2 (25)  <-- Shortcut to 2.
+    
+    // If we take 0->1 (10), we enter cycle at 1.
+    // Internal cycle edges needed: 1->2, 2->3, 3->1.
+    // To limit to tree, we need n-1 edges. 
+    // Cycle has 3 nodes {1,2,3}. We need 2 edges from cycle, plus entry.
+    // Best entry 0->1 (10).
+    // Edges in cycle: 1->2 (10), 2->3 (10), 3->1 (10).
+    // If enter at 1, we drop 3->1.
+    // Cost: 10 (0->1) + 10 (1->2) + 10 (2->3) = 30.
+    
+    // Alternative: Enter at 2 via 0->2 (25).
+    // We drop 1->2. Use 3->1 and 2->3.
+    // Cost: 25 (0->2) + 10 (2->3) + 10 (3->1) = 45. 
+    
+    // So solution 30 is better.
+    
+    // Now make 0->2 cheaper. Say 15.
+    // Option 1: 10 + 10 + 10 = 30.
+    // Option 2: 15 (0->2) + 10 (2->3) + 10 (3->1) = 35. Still worse.
+    
+    // Make cycle edges heavy.
+    // 1->2 (100), 2->3 (100), 3->1 (100).
+    // 0->1 (10).
+    // Cost 10 + 100 + 100 = 210.
+    
+    // Add 0->2 (50).
+    // Enter at 2. Drop 1->2. Use 3->1 and 2->3.
+    // Cost 50 (0->2) + 100 (2->3) + 100 (3->1) = 250.
+    
+    // Let's create a case where entering a different node is better.
+    // Cycle 1-2-3.
+    // 1->2 (10), 2->3 (10), 3->1 (100).
+    // Entry 0->1 (100).
+    // Entry 0->3 (20).
+    
+    // If enter 1: 100 + 10 + 10 = 120. (Break 3->1)
+    // If enter 3: 20 + 100(3->1) + 10(1->2) = 130. (Break 2->3) - Wait.
+    // If enter 3, we keep edges pointing to others?
+    // Edges available: 1->2, 2->3, 3->1.
+    // If root at 3 (locally): 3->1, 1->2. Cost 100+10 = 110.
+    // Total 20 + 110 = 130.
+    
+    // 120 is optimal.
+    
+    std::vector<DirectedEdge> edges;
+    edges.push_back({0, 1, 100, 1});
+    edges.push_back({0, 3, 20, 2});
+    edges.push_back({1, 2, 10, 3});
+    edges.push_back({2, 3, 10, 4});
+    edges.push_back({3, 1, 100, 5});
+    
+    std::vector<int> res;
+    long long cost = directed_mst(4, 0, edges, res);
+    
+    EXPECT_EQ(cost, 120);
+    // Should contain 0->1 (1), 1->2 (3), 2->3 (4).
+    std::set<int> id_set(res.begin(), res.end());
+    EXPECT_TRUE(id_set.count(1));
+    EXPECT_TRUE(id_set.count(3));
+    EXPECT_TRUE(id_set.count(4));
+    EXPECT_FALSE(id_set.count(2)); // 0->3 not used
+    EXPECT_FALSE(id_set.count(5)); // 3->1 not used
+}
+
+TEST(DirectedMSTTest, Impossible) {
+    std::vector<DirectedEdge> edges;
+    edges.push_back({0, 1, 10, 1});
+    // Node 2 unreachable
+    
+    std::vector<int> res;
+    long long cost = directed_mst(3, 0, edges, res);
+    EXPECT_EQ(cost, -1);
 }

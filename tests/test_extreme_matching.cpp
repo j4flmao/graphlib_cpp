@@ -43,3 +43,21 @@ TEST(GeneralMatchingTest, WeightedK20_VariableWeights) {
     
     EXPECT_EQ(gm.maximum_weight_matching(), 1000);
 }
+
+TEST(GeneralMatchingTest, Weighted_Large_Cycle) {
+    // Cycle of 40 nodes.
+    // Edges (0,1)=10, (1,2)=1, (2,3)=10, ...
+    // Max weight should be 20 * 10 = 200.
+    int n = 40;
+    GeneralMatching gm(n);
+    for(int i=0; i<n; ++i) {
+        int next = (i + 1) % n;
+        int w = (i % 2 == 0) ? 10 : 1;
+        gm.add_edge(i, next, w);
+    }
+    // Also add some random low-weight edges to make it non-trivial/dense
+    gm.add_edge(0, 10, 1);
+    gm.add_edge(5, 15, 1);
+    
+    EXPECT_EQ(gm.maximum_weight_matching(), 200);
+}

@@ -294,4 +294,93 @@ GRAPHLIB_API std::vector<std::vector<int>> find_all_subgraph_isomorphisms(const 
     return mappings;
 }
 
+
+// Helper for Tree Isomorphism
+std::vector<int> get_tree_centers(const Graph& g) {
+    int n = g.vertex_count();
+    if (n == 0) return {};
+    if (n == 1) return {0};
+    
+    std::vector<int> degree(n, 0);
+    std::vector<int> leaves;
+    for(int i=0; i<n; ++i) {
+        int d = 0;
+        for(Edge* e = g.get_edges(i); e; e = e->next) {
+            // Treat as undirected
+            d++; 
+        }
+        degree[i] = d;
+        if (d <= 1) leaves.push_back(i);
+    }
+    
+    int remaining = n;
+    while (remaining > 2) {
+        remaining -= (int)leaves.size();
+        std::vector<int> next_leaves;
+        for(int leaf : leaves) {
+            degree[leaf] = 0; // Remove
+            for(Edge* e = g.get_edges(leaf); e; e = e->next) {
+                int neighbor = e->to;
+                if (degree[neighbor] > 0) {
+                     degree[neighbor]--;
+                     if (degree[neighbor] == 1) {
+                         next_leaves.push_back(neighbor);
+                     }
+                }
+            }
+        }
+        leaves = next_leaves;
+    }
+    return leaves;
+}
+
+// Canonical encoding of a rooted tree
+// Using string representation: "(" + sorted(child_codes) + ")"
+// For performance, one could use integer hashing, but string is safer for correctness first.
+std::string encode_tree(const Graph& g, int u, int p) {
+    std::vector<std::string> child_codes;
+    for(Edge* e = g.get_edges(u); e; e = e->next) {
+        int v = e->to;
+        if (v != p) {
+            child_codes.push_back(encode_tree(g, v, u));
+        }
+    }
+    std::sort(child_codes.begin(), child_codes.end());
+    
+    std::string code = "(";
+    for(const auto& s : child_codes) code += s;
+    code += ")";
+    return code;
+}
+
+GRAPHLIB_API bool is_tree_isomorphic(const Graph& t1, const Graph& t2) {
+    if (t1.vertex_count() != t2.vertex_count()) return false;
+    int n = t1.vertex_count();
+    if (n == 0) return true;
+    
+    // Safety check: is it a tree?
+    // We assume yes or check basic property (|E| = 2*(N-1) for undirected stored as double directed)
+    // Actually, user promised trees. But centers logic might fail if not tree.
+    // get_tree_centers works on any graph but removing leaves on cycle -> cycle remains.
+    // If centers return empty, not a tree (or cycle).
+    
+    // Make sure we have undirected access (Graph stores edges directedly, need u->v and v->u for undirected logic).
+    // Assuming input is undirected tree.
+    
+    auto centers1 = get_tree_centers(t1);
+    auto centers2 = get_tree_centers(t2);
+    
+    if (centers1.size() != centers2.size()) return false;
+    
+    std::string code1 = encode_tree(t1, centers1[0], -1);
+    
+    for (int c : centers2) {
+        std::string code2 = encode_tree(t2, c, -1);
+        if (code1 == code2) return true;
+    }
+    
+    return false;
+}
+
 } // namespace graphlib
+

@@ -277,7 +277,6 @@ int dsatur_coloring(const Graph& g, std::vector<int>& colors) {
     // For simplicity O(N^2) selection
     
     std::vector<bool> colored(n, false);
-    int colored_cnt = 0;
     
     // Initial: node with max degree
     int start_node = 0;
@@ -563,6 +562,238 @@ std::pair<long long, std::vector<int>> tsp_metric_approx(const Graph& g) {
     return {cost, path};
 }
 
+std::pair<long long, std::vector<int>> tsp_christofides(const Graph& g) {
+    int n = g.vertex_count();
+    if (n == 0) return {0, {}};
+    if (n == 1) return {0, {0}};
+
+    // 1. Compute MST
+    std::vector<MstEdge> edges;
+    for (int u = 0; u < n; ++u) {
+        Edge* e = g.get_edges(u);
+        while (e) {
+            if (u < e->to) {
+                edges.push_back({u, e->to, e->weight});
+            }
+            e = e->next;
+        }
+    }
+    std::sort(edges.begin(), edges.end());
+    
+    UnionFind uf(n);
+    std::vector<MstEdge> mst_edges;
+    for (const auto& e : edges) {
+        if (uf.unite(e.u, e.v)) {
+            mst_edges.push_back(e);
+        }
+    }
+
+    // 2. Build MST graph and identify odd degree vertices
+    Graph multigraph(n, false);
+    std::vector<int> degrees(n, 0);
+    for (const auto& e : mst_edges) {
+        multigraph.add_edge(e.u, e.v, e.weight);
+        degrees[e.u]++;
+        degrees[e.v]++;
+    }
+
+    std::vector<int> odds;
+    for (int i = 0; i < n; ++i) {
+        if (degrees[i] % 2 != 0) {
+            odds.push_back(i);
+        }
+    }
+
+    // 3. Minimum Weight Perfect Matching on odd vertices
+    if (!odds.empty()) {
+        int k = (int)odds.size();
+        // Construct complete graph on odds
+        // We need original distances. Since g is complete metric graph, direct edge is shortest.
+        
+        GeneralMatching matcher(k);
+        long long max_w = 0;
+        
+        // Find max weight to transform to min weight matching
+        for (int i = 0; i < k; ++i) {
+            for (int j = i + 1; j < k; ++j) {
+                int u = odds[i];
+                int v = odds[j];
+                // Find weight u-v in g
+                long long w = std::numeric_limits<long long>::max();
+                Edge* e = g.get_edges(u);
+                while(e) {
+                    if (e->to == v) {
+                        w = std::min(w, e->weight);
+                    }
+                    e = e->next;
+                }
+                if (w != std::numeric_limits<long long>::max()) {
+                    max_w = std::max(max_w, w);
+                }
+            }
+        }
+        
+        long long M = max_w + 1;
+        for (int i = 0; i < k; ++i) {
+            for (int j = i + 1; j < k; ++j) {
+                int u = odds[i];
+                int v = odds[j];
+                long long w = std::numeric_limits<long long>::max();
+                Edge* e = g.get_edges(u);
+                while(e) {
+                    if (e->to == v) {
+                        w = std::min(w, e->weight);
+                    }
+                    e = e->next;
+                }
+                if (w != std::numeric_limits<long long>::max()) {
+                    matcher.add_edge(i, j, M - w);
+                }
+            }
+        }
+        
+        matcher.maximum_weight_matching();
+        std::vector<int> match = matcher.get_mate();
+        
+        // Add matching edges to multigraph
+        for (int i = 0; i < k; ++i) {
+            if (match[i] != -1 && match[i] > i) {
+                int u = odds[i];
+                int v = odds[match[i]];
+                
+                // Find weight
+                long long w = std::numeric_limits<long long>::max();
+                Edge* e = g.get_edges(u);
+                while(e) {
+                    if (e->to == v) {
+                        w = std::min(w, e->weight);
+                    }
+                    e = e->next;
+                }
+                
+                multigraph.add_edge(u, v, w);
+            }
+        }
+    }
+    
+    // 4. Find Eulerian Circuit (Hierholzer's or DFS)
+    // Multigraph is now Eulerian (all degrees even) and connected.
+    // Use Hierholzer's algorithm adapted for recursion or stack
+    
+    // Since Graph uses linked list, we can remove edges? 
+    // No, Graph doesn't support removal easily.
+    // We can mark used edges.
+    
+    // Let's use a temporary adjacency structure that allows edge removal/marking
+    struct TempEdge {
+        int to;
+        long long weight;
+        int id; // to track reverse edge
+        bool used;
+        TempEdge* reverse_edge;
+    };
+    
+    std::vector<std::vector<TempEdge*>> adj(n);
+    // Use deque to prevent pointer invalidation on push_back, 
+    // or simply reserve exact amount.
+    // Total edges = (N-1) from MST + Matching edges.
+    // Each undirected edge creates 2 TempEdges.
+    // Safe upper bound: (N + N) * 2 = 4N.
+    std::vector<TempEdge> all_edges_store;
+    all_edges_store.reserve(n * 6); 
+
+    
+    int edge_id_counter = 0;
+    for(int u=0; u<n; ++u) {
+        Edge* e = multigraph.get_edges(u);
+        while(e) {
+            if(u < e->to) {
+                // Add u->v and v->u
+                all_edges_store.push_back({e->to, e->weight, edge_id_counter, false, nullptr});
+                TempEdge* uv = &all_edges_store.back();
+                
+                all_edges_store.push_back({u, e->weight, edge_id_counter, false, nullptr});
+                TempEdge* vu = &all_edges_store.back();
+                
+                uv->reverse_edge = vu;
+                vu->reverse_edge = uv;
+                
+                adj[u].push_back(uv);
+                adj[e->to].push_back(vu);
+                
+                edge_id_counter++;
+            }
+            e = e->next;
+        }
+    }
+    
+    std::vector<int> circuit;
+    std::stack<int> curr_path;
+    curr_path.push(0);
+    
+    while(!curr_path.empty()) {
+        int u = curr_path.top();
+        
+        bool found = false;
+        // Find unused edge
+        while(!adj[u].empty()) {
+            TempEdge* e = adj[u].back();
+            if(e->used) {
+                adj[u].pop_back();
+                continue;
+            }
+            
+            e->used = true;
+            e->reverse_edge->used = true;
+            curr_path.push(e->to);
+            found = true;
+            break;
+        }
+        
+        if(!found) {
+            circuit.push_back(u);
+            curr_path.pop();
+        }
+    }
+    
+    // 5. Shortcut to form Hamiltonian Cycle
+    std::vector<int> tsp_path;
+    std::vector<bool> visited(n, false);
+    long long total_cost = 0;
+    
+    // Circuit is in reverse order, but for undirected TSP it doesn't matter.
+    // Also, 0 is at end and start.
+    
+    for (auto it = circuit.rbegin(); it != circuit.rend(); ++it) {
+        int u = *it;
+        if (!visited[u]) {
+            visited[u] = true;
+            tsp_path.push_back(u);
+        }
+    }
+    
+    // Calculate cost
+    if (tsp_path.size() != n) return {-1, {}};
+    
+    for (size_t i = 0; i < n; ++i) {
+        int u = tsp_path[i];
+        int v = tsp_path[(i + 1) % n];
+        
+        long long w = std::numeric_limits<long long>::max();
+        Edge* e = g.get_edges(u);
+        while(e) {
+            if (e->to == v) {
+                w = std::min(w, e->weight);
+            }
+            e = e->next;
+        }
+        if (w == std::numeric_limits<long long>::max()) return {-1, {}};
+        total_cost += w;
+    }
+    
+    return {total_cost, tsp_path};
+}
+
 std::vector<int> vertex_cover_approx(const Graph& g) {
     // Maximal Matching approximation
     int n = g.vertex_count();
@@ -587,6 +818,146 @@ std::vector<int> vertex_cover_approx(const Graph& g) {
     }
     
     return cover;
+}
+
+// -----------------------------------------------------------------------------
+// Max Cut
+// -----------------------------------------------------------------------------
+
+std::pair<long long, std::vector<int>> max_cut_approx(const Graph& g) {
+    int n = g.vertex_count();
+    std::vector<int> partition(n, 0); // Start all in set 0
+    std::vector<long long> gain(n, 0); // Gain if moved to other set
+    
+    // Greedy strategy: Loop through vertices, if moving improves cut, move it.
+    // Repeat until stable. This is a local search 0.5-approx.
+    
+    bool improved = true;
+    while(improved) {
+        improved = false;
+        
+        for (int u = 0; u < n; ++u) {
+            long long w_internal = 0; // edges to same set
+            long long w_external = 0; // edges to other set
+            
+            Edge* e = g.get_edges(u);
+            while(e) {
+                if (partition[e->to] == partition[u]) {
+                    w_internal += e->weight;
+                } else {
+                    w_external += e->weight;
+                }
+                e = e->next;
+            }
+            
+            // If internal > external, we gain by flipping
+            if (w_internal > w_external) {
+                partition[u] = 1 - partition[u];
+                improved = true;
+            }
+        }
+    }
+    
+    // Calculate final cut
+    long long total_cut = 0;
+    for (int u = 0; u < n; ++u) {
+        Edge* e = g.get_edges(u);
+        while(e) {
+            if (u < e->to) {
+                if (partition[u] != partition[e->to]) {
+                    total_cut += e->weight;
+                }
+            }
+            e = e->next;
+        }
+    }
+    
+    return {total_cut, partition};
+}
+
+// -----------------------------------------------------------------------------
+// Feedback Vertex Set
+// -----------------------------------------------------------------------------
+
+std::vector<int> feedback_vertex_set_approx(const Graph& g) {
+    int n = g.vertex_count();
+    std::vector<int> fvs;
+    std::vector<bool> removed(n, false);
+    
+    // Greedy heuristic: Repeatedly find a cycle and remove max-degree node in it.
+    
+    std::vector<std::vector<int>> adj(n);
+    for(int u=0; u<n; ++u) {
+        Edge* e = g.get_edges(u);
+        while(e) {
+            adj[u].push_back(e->to);
+            e = e->next;
+        }
+    }
+    
+    while(true) {
+        std::vector<int> parent(n, -1);
+        std::vector<int> color(n, 0); // 0: unvisited, 1: visiting, 2: visited
+        std::vector<int> cycle_nodes;
+        
+        bool cycle_found = false;
+        
+        std::function<void(int, int)> dfs = [&](int u, int p) {
+            if (cycle_found) return;
+            color[u] = 1;
+            parent[u] = p;
+            
+            for (int v : adj[u]) {
+                if (removed[v] || v == p) continue;
+                
+                if (color[v] == 1) {
+                    // Cycle detected
+                    int curr = u;
+                    while (curr != v) {
+                        cycle_nodes.push_back(curr);
+                        curr = parent[curr];
+                    }
+                    cycle_nodes.push_back(v);
+                    cycle_found = true;
+                    return;
+                }
+                
+                if (color[v] == 0) {
+                    dfs(v, u);
+                    if (cycle_found) return;
+                }
+            }
+            color[u] = 2;
+        };
+        
+        for(int i=0; i<n; ++i) {
+            if (!removed[i] && color[i] == 0) {
+                dfs(i, -1);
+                if (cycle_found) break;
+            }
+        }
+        
+        if (!cycle_found) break;
+        
+        int best_node = -1;
+        int max_deg = -1;
+        
+        for (int u : cycle_nodes) {
+            int d = 0;
+            for(int v : adj[u]) {
+                if(!removed[v]) d++;
+            }
+            if (d > max_deg) {
+                max_deg = d;
+                best_node = u;
+            }
+        }
+        
+        removed[best_node] = true;
+        fvs.push_back(best_node);
+    }
+    
+    return fvs;
 }
 
 }

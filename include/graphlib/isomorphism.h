@@ -28,6 +28,11 @@ GRAPHLIB_API bool is_subgraph_isomorphic(const Graph& pattern, const Graph& targ
  */
 GRAPHLIB_API std::vector<std::vector<int>> find_all_subgraph_isomorphisms(const Graph& pattern, const Graph& target);
 
+// Checks if two trees are isomorphic.
+// Much faster than general isomorphism (O(N log N) or O(N)).
+// Requires both graphs to be trees (connected, n-1 edges).
+GRAPHLIB_API bool is_tree_isomorphic(const Graph& t1, const Graph& t2);
+
 }
 
 #endif // GRAPHLIB_ISOMORPHISM_H

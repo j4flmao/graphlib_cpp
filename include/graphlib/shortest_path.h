@@ -2,6 +2,7 @@
 #define GRAPHLIB_SHORTEST_PATH_H
 
 #include "export.h"
+#include "graph_core.h"
 #include <vector>
 
 namespace graphlib {
@@ -47,12 +48,22 @@ public:
     // Returns empty vector if no path exists or k <= 0.
     std::vector<std::vector<int>> k_shortest_paths(int source, int target, int k, long long inf);
 
+    // Finds a negative weight cycle.
+    // Returns the cycle path (vertices). Empty if no negative cycle.
+    std::vector<int> find_negative_cycle(long long inf);
+
 private:
     std::vector<long long> dijkstra_with_path(int source, int target, long long inf, std::vector<int>& parent);
 };
 
 GRAPHLIB_API std::vector<int> reconstruct_path(int source, int target, const std::vector<int>& parent);
 
-}
+// Topological Sort for general Graph.
+// Returns vector of vertices in topological order.
+// Returns empty if graph has a cycle.
+// Note: This requires a 'Graph' class definition.
+GRAPHLIB_API std::vector<int> topological_sort(const Graph& g);
+
+} // namespace graphlib
 
 #endif

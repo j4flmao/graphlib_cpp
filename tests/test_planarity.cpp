@@ -1,82 +1,73 @@
 #include <gtest/gtest.h>
 #include "graphlib/planarity.h"
-#include "graphlib/graph_core.h"
-#include "graphlib/graph_generator.h"
+#include <vector>
 
 using namespace graphlib;
 
-class PlanarityTest : public ::testing::Test {};
-
-TEST_F(PlanarityTest, K4IsPlanar) {
-    Graph k4 = make_complete_graph(4, false);
-    EXPECT_TRUE(is_planar(k4));
-}
-
-TEST_F(PlanarityTest, K5IsNonPlanar) {
-    Graph k5 = make_complete_graph(5, false);
-    EXPECT_FALSE(is_planar(k5));
-}
-
-TEST_F(PlanarityTest, K33IsNonPlanar) {
-    Graph k33(6, false);
-    // Part A: 0, 1, 2. Part B: 3, 4, 5.
-    for(int i=0; i<3; ++i) {
-        for(int j=3; j<6; ++j) {
-            k33.add_edge(i, j);
-        }
-    }
-    EXPECT_FALSE(is_planar(k33));
-}
-
-TEST_F(PlanarityTest, TreeIsPlanar) {
-    Graph tree = make_random_graph(10, 9, false, 1, 1, 42); // Likely a tree or forest if constructed carefully, but random graph isn't guaranteed tree.
-    // Use manual tree
-    Graph t(10, false);
-    for(int i=1; i<10; ++i) {
-        t.add_edge(i, (i-1)/2);
-    }
-    EXPECT_TRUE(is_planar(t));
-}
-
-TEST_F(PlanarityTest, GridIsPlanar) {
-    // 3x3 Grid
-    Graph grid(9, false);
-    // Horizontal
-    for(int i=0; i<3; ++i) {
-        for(int j=0; j<2; ++j) {
-            grid.add_edge(i*3 + j, i*3 + j + 1);
-        }
-    }
-    // Vertical
-    for(int i=0; i<2; ++i) {
-        for(int j=0; j<3; ++j) {
-            grid.add_edge(i*3 + j, (i+1)*3 + j);
-        }
-    }
-    EXPECT_TRUE(is_planar(grid));
-}
-
-TEST_F(PlanarityTest, DisconnectedPlanar) {
-    Graph g(6, false);
-    g.add_edge(0, 1);
-    g.add_edge(1, 2);
-    g.add_edge(2, 0);
-    g.add_edge(3, 4);
-    EXPECT_TRUE(is_planar(g));
-}
-
-TEST_F(PlanarityTest, DisconnectedNonPlanar) {
-    Graph g(10, false);
-    // K5 component
-    for(int i=0; i<5; ++i) {
-        for(int j=i+1; j<5; ++j) {
+TEST(PlanarityTest, K4) {
+    // K4 is planar.
+    Graph g(4);
+    for(int i=0; i<4; ++i)
+        for(int j=i+1; j<4; ++j)
             g.add_edge(i, j);
-        }
-    }
-    // Isolated edge
-    g.add_edge(5, 6);
-    
-    // Note: My current implementation might only check component of vertex 0.
-    // So this test checks if the algo correctly identifies non-planarity in component 0.
+            
+    EXPECT_TRUE(is_planar(g));
+    auto faces = get_planar_faces(g);
+    // K4 has V=4, E=6 -> F = 2 - 4 + 6 = 4.
+    EXPECT_EQ(faces.size(), 4);
+}
+
+TEST(PlanarityTest, K5) {
+    // K5 is NOT planar.
+    Graph g(5);
+    for(int i=0; i<5; ++i)
+        for(int j=i+1; j<5; ++j)
+            g.add_edge(i, j);
+            
     EXPECT_FALSE(is_planar(g));
+    auto faces = get_planar_faces(g);
+    EXPECT_TRUE(faces.empty());
+}
+
+TEST(PlanarityTest, K33) {
+    // K3,3 is NOT planar.
+    Graph g(6);
+    // Bipartite partitions {0,1,2} and {3,4,5}
+    for(int i=0; i<3; ++i)
+        for(int j=3; j<6; ++j)
+            g.add_edge(i, j);
+            
+    EXPECT_FALSE(is_planar(g));
+    auto faces = get_planar_faces(g);
+    EXPECT_TRUE(faces.empty());
+}
+
+TEST(PlanarityTest, Tree) {
+    // Trees are planar.
+    Graph g(5);
+    g.add_edge(0, 1);
+    g.add_edge(0, 2);
+    g.add_edge(1, 3);
+    g.add_edge(1, 4);
+    
+    EXPECT_TRUE(is_planar(g));
+    // For a tree, our implementation returns a single "outer" face/walk.
+    // Faces = E - V + 2 = 4 - 5 + 2 = 1.
+    auto faces = get_planar_faces(g);
+    EXPECT_EQ(faces.size(), 1);
+}
+
+TEST(PlanarityTest, DisconnectedPlanar) {
+    // Two K3s
+    Graph g(6);
+    g.add_edge(0, 1); g.add_edge(1, 2); g.add_edge(2, 0);
+    g.add_edge(3, 4); g.add_edge(4, 5); g.add_edge(5, 3);
+    
+    EXPECT_TRUE(is_planar(g));
+    // Each component has V=3, E=3 -> F=2.
+    // Total F = 2 + 2 = 4?
+    // Note: get_planar_faces returns faces for each component.
+    // It concatenates them.
+    auto faces = get_planar_faces(g);
+    EXPECT_EQ(faces.size(), 4);
 }

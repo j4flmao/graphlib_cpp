@@ -85,6 +85,23 @@ GRAPHLIB_API long long chinese_postman(const Graph& g);
 GRAPHLIB_API std::pair<long long, std::vector<int>> tsp_metric_approx(const Graph& g);
 
 /**
+ * @brief Approximates TSP for Metric Graphs using Christofides Algorithm.
+ * Guarantees a solution within 1.5 * OPT.
+ * 
+ * Steps:
+ * 1. Find MST.
+ * 2. Find vertices with odd degree in MST.
+ * 3. Find Minimum Weight Perfect Matching on these vertices.
+ * 4. Combine MST and Matching to form Eulerian Multigraph.
+ * 5. Find Eulerian Circuit.
+ * 6. Shortcut to form Hamiltonian Cycle.
+ * 
+ * @param g The graph (must be complete and satisfy triangle inequality).
+ * @return The cost of the approximate tour and the tour path.
+ */
+GRAPHLIB_API std::pair<long long, std::vector<int>> tsp_christofides(const Graph& g);
+
+/**
  * @brief Approximates Minimum Vertex Cover using Maximal Matching.
  * Guarantees a solution within 2 * OPT.
  * 
@@ -92,6 +109,31 @@ GRAPHLIB_API std::pair<long long, std::vector<int>> tsp_metric_approx(const Grap
  * @return A vector of vertices in the vertex cover.
  */
 GRAPHLIB_API std::vector<int> vertex_cover_approx(const Graph& g);
+
+/**
+ * @brief Approximates the Maximum Cut of the graph.
+ * Uses a randomized approach (expected 0.5 approximation) or greedy.
+ * This implementation uses a deterministic greedy strategy (0.5 approximation).
+ * 
+ * @param g The graph.
+ * @return Pair of {total_cut_weight, partition}. 
+ *         partition[u] is 0 or 1, denoting the set vertex u belongs to.
+ */
+GRAPHLIB_API std::pair<long long, std::vector<int>> max_cut_approx(const Graph& g);
+
+/**
+ * @brief Approximates the Minimum Feedback Vertex Set for undirected graphs.
+ * A feedback vertex set is a set of vertices whose removal makes the graph acyclic.
+ * 
+ * Algorithm: Repeatedly find a cycle and remove a vertex from it.
+ * This is not a constant factor approximation in general, but efficient heuristic.
+ * For factor-2, specialized algorithms exist (Bafna et al.). we use a greedy cycle-breaking heuristic.
+ * 
+ * @param g The graph (undirected).
+ * @return std::vector<int> List of vertices in the feedback set.
+ */
+GRAPHLIB_API std::vector<int> feedback_vertex_set_approx(const Graph& g);
+
 
 }
 

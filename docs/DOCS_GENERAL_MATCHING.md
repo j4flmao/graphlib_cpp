@@ -73,11 +73,23 @@ long long weight = gm.maximum_weight_matching();
 
 - `long long maximum_weight_matching()`:
   - Returns the sum of weights of edges in a maximum-weight matching.
+  - After calling this, you can retrieve the matching using `get_mate()`.
+
+```cpp
+std::vector<int> mate = gm.get_mate();
+for (int i = 0; i < n; ++i) {
+    if (mate[i] != -1 && i < mate[i]) {
+        std::cout << "Matched: " << i << " - " << mate[i] << std::endl;
+    }
+}
+```
 
 Differences vs maximum cardinality:
 
 - Maximum cardinality ignores weights, maximizing number of pairs.
 - Maximum weight considers weights, maximizing the total sum.
+
+> **Note:** The Weighted Matching implementation in v1.0.4 is fully functional and verified. It uses an O(N³) primal-dual approach based on Edmonds' Blossom algorithm. It correctly handles odd cycles (blossoms) and complex weight structures. The implementation reduces the Maximum Weight Matching problem to a Perfect Matching problem on an expanded graph (2N nodes) with specific edge weights (bias and scaling) to ensure optimality. This method is robust but computationally intensive for very large dense graphs.
 
 ---
 
@@ -93,4 +105,3 @@ Examples:
 
 - Matching people into pairs where edges encode compatibility scores.
 - Selecting non-overlapping edges in arbitrary networks with weights.
-

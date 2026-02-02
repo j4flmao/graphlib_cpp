@@ -61,13 +61,31 @@ Fast, near-linear time community detection.
 auto communities = graphlib::label_propagation_communities(g);
 ```
 
-### 3.2 Modularity
+### 3.2 Louvain Method
+Heuristic method for community detection based on modularity maximization.
+```cpp
+auto communities = graphlib::louvain_method(g);
+double Q = graphlib::modularity(g, communities);
+std::cout << "Modularity: " << Q << std::endl;
+```
+
+### 3.3 Modularity
 Calculates the quality of a community partition.
 ```cpp
 double Q = graphlib::modularity(g, communities);
 ```
 
-## 4. Weisfeiler-Lehman Hash
+## 4. Spectral Analysis
+
+### 4.1 Fiedler Vector
+The eigenvector corresponding to the second smallest eigenvalue of the Laplacian matrix. Used for spectral clustering and graph partitioning.
+```cpp
+#include <graphlib/spectral.h>
+
+std::vector<double> fiedler = graphlib::fiedler_vector(g);
+```
+
+## 5. Weisfeiler-Lehman Hash
 Generates a structural hash of the graph, useful for fast isomorphism testing.
 ```cpp
 std::string hash = graphlib::weisfeiler_lehman_hash(g, 2); // 2 iterations

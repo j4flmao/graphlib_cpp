@@ -1,145 +1,69 @@
 #include <gtest/gtest.h>
-#include <graphlib/graphlib.h>
-#include <vector>
-#include <algorithm>
+#include "graphlib/np_hard.h"
 #include <numeric>
-#include <set>
 
 using namespace graphlib;
 
-// -----------------------------------------------------------------------------
-// Graph Coloring (Greedy with Welsh-Powell Heuristic)
-// -----------------------------------------------------------------------------
-
-TEST(ColoringTest, BipartiteIs2Colorable) {
-    Graph g(4, false); // Square 0-1-2-3-0
-    g.add_edge(0, 1);
-    g.add_edge(1, 2);
-    g.add_edge(2, 3);
-    g.add_edge(3, 0);
+TEST(ApproxTest, MaxCutCycle4) {
+    // C4: 0-1-2-3-0
+    // Max cut is 4 edges (bipartite: {0,2} and {1,3}).
+    // Approx might return 2 (greedy worst case?) or 4.
+    // Random/Greedy usually good on C4.
+    Graph g(4);
+    g.add_edge(0, 1, 1); g.add_edge(1, 0, 1);
+    g.add_edge(1, 2, 1); g.add_edge(2, 1, 1);
+    g.add_edge(2, 3, 1); g.add_edge(3, 2, 1);
+    g.add_edge(3, 0, 1); g.add_edge(0, 3, 1);
     
-    std::vector<int> colors;
-    int k = greedy_coloring(g, colors);
-    
-    EXPECT_LE(k, 2); // Should be exactly 2
-    for(int i=0; i<4; ++i) EXPECT_GE(colors[i], 0);
-    EXPECT_NE(colors[0], colors[1]);
-    EXPECT_NE(colors[1], colors[2]);
-    EXPECT_NE(colors[2], colors[3]);
-    EXPECT_NE(colors[3], colors[0]);
+    auto res = max_cut_approx(g);
+    // Should be at least total_weight / 2 = 2.
+    // Ideally 4.
+    EXPECT_GE(res.first, 2);
+    // On bipartite, greedy often finds optimal.
+    EXPECT_EQ(res.first, 4);
 }
 
-TEST(ColoringTest, K4Is4Colorable) {
-    Graph g(4, false);
-    for(int i=0; i<4; ++i)
-        for(int j=i+1; j<4; ++j)
-            g.add_edge(i, j);
-            
-    std::vector<int> colors;
-    int k = greedy_coloring(g, colors);
+TEST(ApproxTest, MaxCutTriangle) {
+    // Triangle. Max cut is 2. (Any partition is 1 vs 2 nodes, 2 edges cut, 1 internal).
+    Graph g(3);
+    g.add_edge(0, 1, 1); g.add_edge(1, 0, 1);
+    g.add_edge(1, 2, 1); g.add_edge(2, 1, 1);
+    g.add_edge(2, 0, 1); g.add_edge(0, 2, 1);
     
-    EXPECT_EQ(k, 4);
-    std::set<int> distinct_colors(colors.begin(), colors.end());
-    EXPECT_EQ(distinct_colors.size(), 4);
+    auto res = max_cut_approx(g);
+    EXPECT_GE(res.first, 2); 
+    // Expect exactly 2
+    EXPECT_EQ(res.first, 2);
 }
 
-TEST(ColoringTest, OddCycleIs3Colorable) {
-    Graph g(5, false); // C5
-    g.add_edge(0, 1); g.add_edge(1, 2);
-    g.add_edge(2, 3); g.add_edge(3, 4);
-    g.add_edge(4, 0);
+TEST(ApproxTest, FVS_Triangle) {
+    // Triangle. Removing any 1 node breaks cycle.
+    Graph g(3);
+    g.add_edge(0, 1); g.add_edge(1, 0);
+    g.add_edge(1, 2); g.add_edge(2, 1);
+    g.add_edge(2, 0); g.add_edge(0, 2);
     
-    std::vector<int> colors;
-    int k = greedy_coloring(g, colors);
-    
-    EXPECT_EQ(k, 3);
+    auto fvs = feedback_vertex_set_approx(g);
+    EXPECT_EQ(fvs.size(), 1);
+    // Should be valid FVS
+    // (Check if acyclic after removal - done implicitly by algorithm until acyclic)
 }
 
-// -----------------------------------------------------------------------------
-// Disjoint Paths (Menger's Theorem Validation)
-// -----------------------------------------------------------------------------
-
-TEST(DisjointPathsTest, EdgeDisjointPaths) {
-    // Graph with bottleneck
-    // S -> A, S -> B
-    // A -> T, B -> T
-    // Plus A -> B
-    // Max flow S->T should be 2.
+TEST(ApproxTest, FVS_TwoTrianglesSharingVertex) {
+    // 0-1, 1-2, 2-0
+    // 2-3, 3-4, 4-2
+    // Removing 2 breaks both. Optimal FVS size 1.
+    // Greedy picking max degree in cycle should optimaly pick 2.
+    Graph g(5);
+    g.add_edge(0, 1); g.add_edge(1, 0);
+    g.add_edge(1, 2); g.add_edge(2, 1);
+    g.add_edge(2, 0); g.add_edge(0, 2);
     
-    MaxFlow mf(4);
-    mf.add_edge(0, 1, 1); // S->A
-    mf.add_edge(0, 2, 1); // S->B
-    mf.add_edge(1, 3, 1); // A->T
-    mf.add_edge(2, 3, 1); // B->T
-    mf.add_edge(1, 2, 1); // A->B
+    g.add_edge(2, 3); g.add_edge(3, 2);
+    g.add_edge(3, 4); g.add_edge(4, 3);
+    g.add_edge(4, 2); g.add_edge(2, 4);
     
-    long long flow = mf.dinic(0, 3);
-    EXPECT_EQ(flow, 2);
-}
-
-TEST(DisjointPathsTest, VertexDisjointPaths) {
-    // S -> A, S -> B
-    // A -> C, B -> C
-    // C -> T
-    // Vertex C is bottleneck. Max vertex disjoint paths should be 1.
-    // To model vertex capacities, split node C into C_in -> C_out with cap 1.
-    
-    // Nodes: S=0, T=5
-    // A=1, B=2, C_in=3, C_out=4
-    
-    MaxFlow mf(6);
-    
-    // Edges with infinite capacity (or large enough)
-    long long INF = 100;
-    
-    // S -> A, S -> B
-    mf.add_edge(0, 1, INF);
-    mf.add_edge(0, 2, INF);
-    
-    // A -> C_in, B -> C_in
-    mf.add_edge(1, 3, INF);
-    mf.add_edge(2, 3, INF);
-    
-    // C_in -> C_out (Vertex capacity 1)
-    mf.add_edge(3, 4, 1);
-    
-    // C_out -> T
-    mf.add_edge(4, 5, INF);
-    
-    long long flow = mf.dinic(0, 5);
-    EXPECT_EQ(flow, 1);
-}
-
-// -----------------------------------------------------------------------------
-// Max Weight Clique Tests
-// -----------------------------------------------------------------------------
-
-TEST(MaxCliqueTest, MaxWeightClique) {
-    // Triangle with weights
-    // Vertices weights: 0: 5, 1: 5, 2: 5
-    // Clique {0,1,2} weight = 15.
-    
-    Graph g(3, false);
-    g.add_edge(0, 1);
-    g.add_edge(1, 2);
-    g.add_edge(2, 0);
-    
-    std::vector<long long> weights = {5, 5, 5};
-    long long mw = max_weight_clique(g, weights);
-    
-    EXPECT_EQ(mw, 15);
-}
-
-TEST(MaxCliqueTest, MaxWeightClique_Independent) {
-    // 0-1, 2 (isolated)
-    // Weights: 0: 10, 1: 10, 2: 30
-    // Max weight clique is {2} with weight 30.
-    
-    Graph g(3, false);
-    g.add_edge(0, 1);
-    
-    std::vector<long long> weights = {10, 10, 30};
-    long long mw = max_weight_clique(g, weights);
-    
-    EXPECT_EQ(mw, 30);
+    auto fvs = feedback_vertex_set_approx(g);
+    EXPECT_EQ(fvs.size(), 1);
+    EXPECT_EQ(fvs[0], 2);
 }

@@ -1,4 +1,5 @@
 #include "graphlib/shortest_path.h"
+#include "graphlib/graph_core.h"
 #include <queue>
 #include <stdexcept>
 #include <limits>
@@ -773,4 +774,95 @@ std::vector<std::vector<int>> ShortestPath::k_shortest_paths(int source, int tar
     return A;
 }
 
+std::vector<int> ShortestPath::find_negative_cycle(long long inf) {
+    (void)inf;
+    // Bellman-Ford / SPFA style detection.
+    std::vector<long long> dist(n_, 0); // Initialize with 0 to detect cycles reachable from "super source" or just anywhere
+    std::vector<int> parent(n_, -1);
+    
+    // We run for n iterations. The last one checks for negative cycle.
+    int x = -1;
+    for (int i = 0; i < n_; ++i) {
+        x = -1;
+        for (int u = 0; u < n_; ++u) {
+            Edge* e = adj_[u];
+            while (e) {
+                if (e->enabled) {
+                    if (dist[u] + e->weight < dist[e->to]) {
+                        dist[e->to] = dist[u] + e->weight;
+                        parent[e->to] = u;
+                        x = e->to;
+                    }
+                }
+                e = e->next;
+            }
+        }
+    }
+    
+    if (x == -1) {
+        return {}; // No negative cycle
+    }
+    
+    // Trace back n times to find a node in the cycle
+    for (int i = 0; i < n_; ++i) {
+        x = parent[x];
+    }
+    
+    std::vector<int> cycle;
+    int curr = x;
+    while (true) {
+        cycle.push_back(curr);
+        if (curr == x && cycle.size() > 1) {
+            break;
+        }
+        curr = parent[curr];
+    }
+    std::reverse(cycle.begin(), cycle.end());
+    // The cycle repeats the start node at end: u, v, w, u.
+    
+    return cycle;
 }
+
+std::vector<int> topological_sort(const Graph& g) {
+    int n = g.vertex_count();
+    std::vector<int> in_degree(n, 0);
+    
+    for (int u = 0; u < n; ++u) {
+        Edge* e = g.get_edges(u);
+        while (e) {
+            in_degree[e->to]++;
+            e = e->next;
+        }
+    }
+    
+    std::queue<int> q;
+    for (int i = 0; i < n; ++i) {
+        if (in_degree[i] == 0) {
+            q.push(i);
+        }
+    }
+    
+    std::vector<int> order;
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+        order.push_back(u);
+        
+        Edge* e = g.get_edges(u);
+        while (e) {
+            int v = e->to;
+            in_degree[v]--;
+            if (in_degree[v] == 0) {
+                q.push(v);
+            }
+            e = e->next;
+        }
+    }
+    
+    if ((int)order.size() != n) {
+        return {}; // Cycle detected
+    }
+    return order;
+}
+
+} // namespace graphlib

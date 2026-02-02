@@ -93,9 +93,31 @@ add_executable(graphlib_tests
     test_isomorphism.cpp
     test_k_shortest_paths.cpp
     test_tree_path_queries.cpp
+    test_extreme_features_v2.cpp
+    test_hypergraph.cpp
+    test_parallel.cpp
+    test_community.cpp
+    test_link_cut_tree.cpp
+    test_steiner_tree.cpp
+    test_planarity.cpp
+    test_directed_mst.cpp
+    test_two_sat.cpp
+    test_general_matching.cpp
+    test_tree_centroid.cpp
+    test_isomorphism_tree.cpp
+    test_tree_algo.cpp
+    test_shortest_path_extra.cpp
+    test_clique.cpp
+    test_coloring.cpp
+    test_tsp.cpp
+    test_np_hard_extra.cpp
+    test_ktruss.cpp
 )
 
-    target_link_libraries(graphlib_tests
+add_executable(debug_matching debug_main.cpp)
+target_link_libraries(debug_matching PRIVATE graphlib)
+
+target_link_libraries(graphlib_tests
         PRIVATE
         graphlib
         GTest::gtest

@@ -1,244 +1,245 @@
 #include "graphlib/tree_algo.h"
 #include <algorithm>
-#include <map>
 #include <queue>
-#include <tuple>
+#include <functional>
 
 namespace graphlib {
 
-std::vector<int> tree_center(const Graph& tree) {
+// Re-using the implementation from isomorphism.cpp if linker allows, 
+// otherwise we can duplicate or move to graph_core. 
+// Ideally get_tree_centers should be in a common place.
+// Since it was static/internal in isomorphism, I'll implement it here or expose it.
+// I exposed it in previous step in isomorphism.h? No, I implemented it inside isomorphism.cpp and exposed it via header?
+// Let's check isomorphism.h from previous steps. 
+// Ah, I see I modified isomorphism.cpp to include get_tree_centers but did I expose it in isomorphism.h?
+// I only exposed is_tree_isomorphic.
+// So I will implement it here fully.
+
+GRAPHLIB_API std::vector<int> get_tree_centers(const Graph& tree) {
     int n = tree.vertex_count();
     if (n == 0) return {};
     if (n == 1) return {0};
-
-    std::vector<int> degree(n, 0);
-    std::queue<int> leaves;
-
-    for (int i = 0; i < n; ++i) {
-        // Count neighbors (undirected: out_degree is enough if symmetric)
-        // Graph is adjacency list.
-        int d = 0;
-        Edge* e = tree.get_edges(i);
-        while (e) {
-            d++;
-            e = e->next;
-        }
-        degree[i] = d;
-        if (d <= 1) {
-            leaves.push(i);
-        }
-    }
-
-    int remaining_nodes = n;
-    while (remaining_nodes > 2) {
-        int sz = static_cast<int>(leaves.size());
-        remaining_nodes -= sz;
-        for (int i = 0; i < sz; ++i) {
-            int u = leaves.front();
-            leaves.pop();
-            
-            Edge* e = tree.get_edges(u);
-            while (e) {
-                int v = e->to;
-                if (degree[v] > 0) { // Valid neighbor
-                    degree[v]--;
-                    if (degree[v] == 1) {
-                        leaves.push(v);
-                    }
-                }
-                e = e->next;
-            }
-        }
-    }
-
-    std::vector<int> centers;
-    while (!leaves.empty()) {
-        centers.push_back(leaves.front());
-        leaves.pop();
-    }
-    return centers;
-}
-
-static std::string dfs_canonical(const Graph& tree, int u, int p) {
-    std::vector<std::string> children;
-    Edge* e = tree.get_edges(u);
-    while (e) {
-        int v = e->to;
-        if (v != p) {
-            children.push_back(dfs_canonical(tree, v, u));
-        }
-        e = e->next;
-    }
-    std::sort(children.begin(), children.end());
-
-    std::string res = "(";
-    for (const auto& s : children) {
-        res += s;
-    }
-    res += ")";
-    return res;
-}
-
-std::string tree_canonical_form(const Graph& tree, int root) {
-    return dfs_canonical(tree, root, -1);
-}
-
-bool are_trees_isomorphic(const Graph& t1, int root1, const Graph& t2, int root2) {
-    return tree_canonical_form(t1, root1) == tree_canonical_form(t2, root2);
-}
-
-bool are_unrooted_trees_isomorphic(const Graph& t1, const Graph& t2) {
-    if (t1.vertex_count() != t2.vertex_count()) return false;
-    if (t1.vertex_count() == 0) return true;
-
-    std::vector<int> c1 = tree_center(t1);
-    std::vector<int> c2 = tree_center(t2);
-
-    std::string s1 = tree_canonical_form(t1, c1[0]);
     
-    for (int root2 : c2) {
-        if (s1 == tree_canonical_form(t2, root2)) return true;
+    std::vector<int> degree(n, 0);
+    std::vector<int> leaves;
+    for(int i=0; i<n; ++i) {
+        int d = 0;
+        for(Edge* e = tree.get_edges(i); e; e = e->next) d++;
+        degree[i] = d;
+        if (d <= 1) leaves.push_back(i);
     }
-    return false;
-}
-
-// -----------------------------------------------------------------------------
-// LCA Implementation
-// -----------------------------------------------------------------------------
-
-LCA::LCA(const Graph& tree, int root) : n_(tree.vertex_count()), depth_(n_) {
-    log_n_ = 0;
-    while ((1 << log_n_) <= n_) log_n_++;
-    up_.assign(n_, std::vector<int>(log_n_ + 1));
-    if (n_ > 0) {
-        dfs(tree, root, root, 0);
-    }
-}
-
-void LCA::dfs(const Graph& tree, int u, int p, int d) {
-    depth_[u] = d;
-    up_[u][0] = p;
-    for (int i = 1; i <= log_n_; i++) {
-        up_[u][i] = up_[up_[u][i - 1]][i - 1];
-    }
-    Edge* e = tree.get_edges(u);
-    while (e) {
-        int v = e->to;
-        if (v != p) {
-            dfs(tree, v, u, d + 1);
-        }
-        e = e->next;
-    }
-}
-
-int LCA::query(int u, int v) const {
-    if (depth_[u] < depth_[v]) std::swap(u, v);
-    for (int i = log_n_; i >= 0; i--) {
-        if (depth_[u] - (1 << i) >= depth_[v]) {
-            u = up_[u][i];
-        }
-    }
-    if (u == v) return u;
-    for (int i = log_n_; i >= 0; i--) {
-        if (up_[u][i] != up_[v][i]) {
-            u = up_[u][i];
-            v = up_[v][i];
-        }
-    }
-    return up_[u][0];
-}
-
-int LCA::dist(int u, int v) const {
-    return depth_[u] + depth_[v] - 2 * depth_[query(u, v)];
-}
-
-int LCA::kth_ancestor(int u, int k) const {
-    for (int i = 0; i <= log_n_; i++) {
-        if ((k >> i) & 1) {
-            u = up_[u][i];
-        }
-    }
-    return u;
-}
-
-// -----------------------------------------------------------------------------
-// HLD Implementation
-// -----------------------------------------------------------------------------
-
-HLD::HLD(const Graph& tree, int root) 
-    : n_(tree.vertex_count()), parent_(n_), depth_(n_), heavy_(n_, -1), 
-      head_(n_), pos_(n_), sz_(n_), cur_pos_(0) {
-    if (n_ > 0) {
-        dfs_sz(tree, root, root);
-        dfs_hld(tree, root, root);
-    }
-}
-
-void HLD::dfs_sz(const Graph& tree, int u, int p) {
-    sz_[u] = 1;
-    parent_[u] = p;
-    depth_[u] = (u == p ? 0 : depth_[p] + 1);
-    int max_sz = 0;
-    Edge* e = tree.get_edges(u);
-    while (e) {
-        int v = e->to;
-        if (v != p) {
-            dfs_sz(tree, v, u);
-            sz_[u] += sz_[v];
-            if (sz_[v] > max_sz) {
-                max_sz = sz_[v];
-                heavy_[u] = v;
+    
+    int remaining = n;
+    while (remaining > 2) {
+        remaining -= (int)leaves.size();
+        std::vector<int> next_leaves;
+        for(int leaf : leaves) {
+            degree[leaf] = 0; 
+            for(Edge* e = tree.get_edges(leaf); e; e = e->next) {
+                int v = e->to;
+                if (degree[v] > 0) {
+                    degree[v]--;
+                    if (degree[v] == 1) next_leaves.push_back(v);
+                }
             }
         }
-        e = e->next;
+        leaves = next_leaves;
     }
+    return leaves;
 }
 
-void HLD::dfs_hld(const Graph& tree, int u, int h) {
-    head_[u] = h;
-    pos_[u] = cur_pos_++;
-    if (heavy_[u] != -1) {
-        dfs_hld(tree, heavy_[u], h);
-    }
-    Edge* e = tree.get_edges(u);
-    while (e) {
-        int v = e->to;
-        if (v != parent_[u] && v != heavy_[u]) {
-            dfs_hld(tree, v, v);
+
+GRAPHLIB_API TreeDiameterResult get_tree_diameter(const Graph& tree) {
+    int n = tree.vertex_count();
+    if (n == 0) return {-1, -1, 0, {}};
+    if (n == 1) return {0, 0, 0, {0}};
+
+    // Double BFS
+    auto bfs = [&](int start) {
+        std::vector<int> dist(n, -1);
+        std::vector<int> parent(n, -1);
+        std::queue<int> q;
+        q.push(start);
+        dist[start] = 0;
+        int farthest = start;
+        
+        while(!q.empty()) {
+            int u = q.front();
+            q.pop();
+            if (dist[u] > dist[farthest]) farthest = u;
+            
+            for(Edge* e = tree.get_edges(u); e; e = e->next) {
+                int v = e->to;
+                if (dist[v] == -1) {
+                    dist[v] = dist[u] + 1;
+                    parent[v] = u;
+                    q.push(v);
+                }
+            }
         }
-        e = e->next;
+        return std::make_pair(farthest, parent);
+    };
+    
+    auto p1 = bfs(0);
+    int u = p1.first;
+    auto p2 = bfs(u);
+    int v = p2.first;
+    std::vector<int> parent = p2.second;
+    
+    std::vector<int> path;
+    int curr = v;
+    while(curr != -1) {
+        path.push_back(curr);
+        if (curr == u) break;
+        curr = parent[curr];
     }
+    
+    return {u, v, (int)path.size() - 1, path};
 }
 
-int HLD::lca(int u, int v) const {
-    while (head_[u] != head_[v]) {
-        if (depth_[head_[u]] > depth_[head_[v]]) {
-            u = parent_[head_[u]];
+GRAPHLIB_API long long max_weight_independent_set_tree(const Graph& tree, const std::vector<long long>& weights, std::vector<int>& selected_nodes) {
+    int n = tree.vertex_count();
+    if (n == 0) return 0;
+    
+    // DP:
+    // dp[u][0]: max weight in subtree u if u is NOT picked.
+    // dp[u][1]: max weight in subtree u if u IS picked.
+    
+    // dp[u][0] = sum(max(dp[v][0], dp[v][1])) for v in children
+    // dp[u][1] = weight[u] + sum(dp[v][0]) for v in children
+    
+    std::vector<long long> dp0(n, 0);
+    std::vector<long long> dp1(n, 0);
+    std::vector<int> parent(n, -1);
+    
+    // DFS traversal order (post-order needed)
+    std::vector<int> order;
+    std::vector<bool> visited(n, false);
+    
+    std::function<void(int)> dfs = [&](int u) {
+        visited[u] = true;
+        for(Edge* e = tree.get_edges(u); e; e = e->next) {
+            int v = e->to;
+            if (!visited[v]) {
+                parent[v] = u;
+                dfs(v);
+            }
+        }
+        order.push_back(u);
+    };
+    
+    dfs(0); // Assuming connected
+    
+    for (int u : order) {
+        dp1[u] = weights[u];
+        dp0[u] = 0;
+        
+        for(Edge* e = tree.get_edges(u); e; e = e->next) {
+            int v = e->to;
+            if (parent[v] == u) { // v is child
+                dp1[u] += dp0[v];
+                dp0[u] += std::max(dp0[v], dp1[v]);
+            }
+        }
+    }
+    
+    long long total = std::max(dp0[0], dp1[0]);
+    
+    // Reconstruct
+    selected_nodes.clear();
+    std::function<void(int, bool)> reconstruct = [&](int u, bool picked) {
+         if (picked) {
+             selected_nodes.push_back(u);
+             for(Edge* e = tree.get_edges(u); e; e = e->next) {
+                 int v = e->to;
+                 if (parent[v] == u) {
+                     reconstruct(v, false);
+                 }
+             }
+         } else {
+             for(Edge* e = tree.get_edges(u); e; e = e->next) {
+                 int v = e->to;
+                 if (parent[v] == u) {
+                     // Pick v if dp1[v] > dp0[v]
+                     if (dp1[v] > dp0[v]) reconstruct(v, true);
+                     else reconstruct(v, false);
+                 }
+             }
+         }
+    };
+    
+    if (dp1[0] > dp0[0]) reconstruct(0, true);
+    else reconstruct(0, false);
+    
+    return total;
+}
+
+GRAPHLIB_API int min_dominating_set_tree(const Graph& tree, std::vector<int>& selected_nodes) {
+    int n = tree.vertex_count();
+    if (n == 0) return 0;
+    
+    // Greedy strategy on tree:
+    // Process nodes bottom-up (reverse topological / post-order).
+    // If a node is not covered, pick its parent.
+    // If root is not covered, pick root.
+    
+    std::vector<int> order;
+    std::vector<int> parent(n, -1);
+    std::vector<bool> visited(n, false);
+    
+    std::function<void(int)> dfs = [&](int u) {
+        visited[u] = true;
+        for(Edge* e = tree.get_edges(u); e; e = e->next) {
+            int v = e->to;
+            if (!visited[v]) {
+                parent[v] = u;
+                dfs(v);
+            }
+        }
+        order.push_back(u);
+    };
+    
+    dfs(0);
+    
+    selected_nodes.clear();
+    std::vector<bool> covered(n, false);
+    std::vector<bool> in_set(n, false); // Is node picked?
+    
+    for (int u : order) {
+        if (covered[u]) continue;
+        
+        // If u is not covered, we must cover it.
+        // Best way is to pick parent (covers parent, u, and siblings).
+        int p = parent[u];
+        if (p != -1) {
+            if (!in_set[p]) {
+                in_set[p] = true;
+                selected_nodes.push_back(p);
+                covered[p] = true;
+                covered[u] = true; // u covered by p
+                if (parent[p] != -1) covered[parent[p]] = true; // p covers its parent too
+                // p covers all children of p
+                for(Edge* e = tree.get_edges(p); e; e = e->next) {
+                    covered[e->to] = true;
+                }
+            } else {
+               // Parent already picked? Then u should have been covered?
+               // Ah, covered array check at start handles it.
+            }
         } else {
-            v = parent_[head_[v]];
+            // Root has no parent. Must pick root.
+            if (!in_set[u]) {
+                in_set[u] = true;
+                selected_nodes.push_back(u);
+                covered[u] = true;
+                for(Edge* e = tree.get_edges(u); e; e = e->next) {
+                    covered[e->to] = true;
+                }
+            }
         }
     }
-    return depth_[u] < depth_[v] ? u : v;
-}
-
-int HLD::dist(int u, int v) const {
-    return depth_[u] + depth_[v] - 2 * depth_[lca(u, v)];
-}
-
-std::vector<std::pair<int, int>> HLD::get_path_intervals(int u, int v) const {
-    std::vector<std::pair<int, int>> res;
-    while (head_[u] != head_[v]) {
-        if (depth_[head_[u]] < depth_[head_[v]]) std::swap(u, v);
-        res.push_back({pos_[head_[u]], pos_[u]});
-        u = parent_[head_[u]];
-    }
-    if (depth_[u] > depth_[v]) std::swap(u, v);
-    res.push_back({pos_[u], pos_[v]});
-    return res;
-}
-
-std::pair<int, int> HLD::get_subtree_interval(int u) const {
-    return {pos_[u], pos_[u] + sz_[u] - 1};
+    
+    return (int)selected_nodes.size();
 }
 
 }

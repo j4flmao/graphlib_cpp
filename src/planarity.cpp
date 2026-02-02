@@ -97,10 +97,20 @@ struct Fragment {
 } // namespace
 
 bool is_planar(const Graph& g) {
+    auto faces = get_planar_faces(g);
+    // If graph is non-empty and faces is empty (and not a single point/tree case handled inside),
+    // it implies non-planar.
+    // However, get_planar_faces returns non-empty for trees/single nodes too (outer face).
+    // If returns empty for non-empty graph, it failed.
+    if (g.vertex_count() > 0 && faces.empty()) return false;
+    return true;
+}
+
+std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
     int n = g.vertex_count();
-    if (n == 0) return true;
+    if (n == 0) return {};
     
-    // 1. Pre-check Euler
+    // 1. Pre-check Euler (Upper bound on edges)
     int m = 0;
     std::vector<std::vector<int>> adj(n);
     for (int i = 0; i < n; ++i) {
@@ -111,7 +121,11 @@ bool is_planar(const Graph& g) {
             }
             adj[i].push_back(e->to);
             if (e->to < n) {
-                 adj[e->to].push_back(i);
+                 // For undirected graph built this way, we might need to be careful not to duplicate
+                 // But wait, the previous code constructed 'adj' manually.
+                 // If graph is already undirected in storage, it's fine.
+                 // We will clean duplicates later anyway.
+                 adj[e->to].push_back(i); 
             }
             e = e->next;
         }
@@ -122,11 +136,10 @@ bool is_planar(const Graph& g) {
         adj[i].erase(std::unique(adj[i].begin(), adj[i].end()), adj[i].end());
     }
 
-    if (n > 4 && m > 3 * n - 6) return false;
-    if (n <= 4) return true; // K4 is planar
+    if (n > 4 && m > 3 * n - 6) return {}; // Too many edges, not planar
 
-    // Handle disconnected graphs by processing each component separately
     std::vector<int> global_visited(n, 0);
+    std::vector<std::vector<int>> all_faces;
     
     for (int start_node = 0; start_node < n; ++start_node) {
         if (global_visited[start_node]) continue;
@@ -150,22 +163,18 @@ bool is_planar(const Graph& g) {
             }
         }
 
-        // If component is small, it's planar
-        if (component_nodes.size() <= 4) continue;
-
-        auto is_planar_component = [&](const std::vector<int>& nodes) -> bool {
-            // Count edges in component for Euler check
+        auto component_embedding = [&](const std::vector<int>& nodes) -> std::vector<Face> {
+             // For very small components, e.g. single node or edge or K4
             int comp_n = (int)nodes.size();
+            
+            // Re-check Euler locally
             int comp_m = 0;
-            for(int u : nodes) {
+             for(int u : nodes) {
                 for(int v : adj[u]) {
-                    if (u < v) { // Count each edge once
-                        comp_m++;
-                    }
+                    if (u < v) comp_m++;
                 }
             }
-            if (comp_n > 4 && comp_m > 3 * comp_n - 6) return false;
-            if (comp_n <= 4) return true;
+            if (comp_n > 4 && comp_m > 3 * comp_n - 6) return {};
 
             // 2. Find initial cycle
             std::map<int, int> visited_dfs;
@@ -186,6 +195,7 @@ bool is_planar(const Graph& g) {
                         while (curr != v) {
                             cycle.push_back(curr);
                             curr = parent_dfs[curr];
+                            if (curr == -1) break; // Should not happen
                         }
                         cycle.push_back(v);
                         return true;
@@ -196,13 +206,29 @@ bool is_planar(const Graph& g) {
             };
 
             if (!dfs_cycle(nodes[0], -1)) {
-                return true; // Tree
+                // No cycle = Tree. Planar. 
+                // Return one face containing all edges (walking around the tree).
+                // Or just empty faces? Usually planar embedding of tree is just one outer face.
+                // Let's return {nodes} as a "face" or similar isn't quite right.
+                // Standard: walk the perimeter (Euler tour).
+                // Or simply return {nodes} if requested? No, faces are cycles.
+                // A tree technically has 1 face (the unbounded one).
+                // We'll return empty vector to signal "it's a tree/forest", but the function should return faces.
+                // We can construct a specific "face" that visits all vertices twice if we strictly follow embedding.
+                // For simplicity, we return a single face containing all vertices in component (not topologically exact).
+                // Actually, let's just return a dummy face for tree components if strict topology is not Critical.
+                // Or: return nothing for faces, as faces are bounded regions (except outer).
+                // But the outer face *is* a face.
+                std::vector<int> outer_face = nodes;
+                return {outer_face};
             }
 
             // 3. Initial Embedding
             std::vector<Face> faces;
             faces.push_back(cycle);
-            faces.push_back(cycle); // Outer face is same as inner initially
+            std::vector<int> outer = cycle;
+            std::reverse(outer.begin(), outer.end());
+            faces.push_back(outer); // Outer face
 
             std::set<EdgeRec> embedded_edges;
             std::set<int> embedded_vertices;
@@ -276,15 +302,12 @@ bool is_planar(const Graph& g) {
                     for (size_t f_idx = 0; f_idx < faces.size(); ++f_idx) {
                         const auto& face = faces[f_idx];
                         bool all_in = true;
+                        
+                        // Check if all contacts are in this face
+                        // Optimizable: use hash set for face vertices
+                        std::set<int> face_set(face.begin(), face.end());
                         for (int c : frag.contacts) {
-                            bool found = false;
-                            for (int fv : face) {
-                                if (fv == c) {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found) {
+                            if (face_set.find(c) == face_set.end()) {
                                 all_in = false;
                                 break;
                             }
@@ -294,7 +317,7 @@ bool is_planar(const Graph& g) {
                         }
                     }
 
-                    if (admissible_faces[i].empty()) return false;
+                    if (admissible_faces[i].empty()) return {}; // Non-planar
                     
                     if ((int)admissible_faces[i].size() < min_admissible) {
                         min_admissible = (int)admissible_faces[i].size();
@@ -313,20 +336,20 @@ bool is_planar(const Graph& g) {
                     find_path_in_fragment(u, chosen_frag.contacts, adj, embedded_edges, path);
                 } else {
                         if (chosen_frag.contacts.empty()) {
-                            // Should not happen in a connected component with a cycle
-                            return false;
+                            return {}; // Should not happen
                         }
                         int u = *chosen_frag.contacts.begin();
                         for(const auto& e : chosen_frag.edges) {
                             if(e.u == u || e.v == u) {
-                                path = {e.u, e.v};
+                                int other = (e.u == u) ? e.v : e.u;
+                                path = {u, other};
                                 break;
                             }
                         }
                 }
 
                 // 8. Embed Path
-                int u = path.front();
+                int u = path.front(); // u and v must be contacts in face
                 int v = path.back();
 
                 for (size_t i = 0; i < path.size() - 1; ++i) {
@@ -361,6 +384,7 @@ bool is_planar(const Graph& g) {
                 std::vector<int> p_inner;
                 for(size_t i=1; i<path.size()-1; ++i) p_inner.push_back(path[i]);
 
+                // Split face into two
                 std::vector<int> new_face1 = face_path1;
                 for(int i=(int)p_inner.size()-1; i>=0; --i) new_face1.push_back(p_inner[i]);
 
@@ -370,13 +394,15 @@ bool is_planar(const Graph& g) {
                 faces[chosen_face_idx] = new_face1;
                 faces.push_back(new_face2);
             }
-            return true;
+            return faces;
         };
-
-        if (!is_planar_component(component_nodes)) return false;
+        
+        auto faces = component_embedding(component_nodes);
+        if (faces.empty()) return {}; // Component not planar
+        all_faces.insert(all_faces.end(), faces.begin(), faces.end());
     }
-
-    return true;
+    
+    return all_faces;
 }
 
 } // namespace graphlib

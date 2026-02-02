@@ -36,6 +36,19 @@
 #include "graphlib/min_cut.h"
 #include "graphlib/planarity.h"
 #include "graphlib/tree_decomposition.h"
+#include "graphlib/heuristics.h"
+#include "graphlib/spectral.h"
+#include "graphlib/community.h"
+#include "graphlib/bidirectional_dijkstra.h"
+#include "graphlib/cycle_basis.h"
+#include "graphlib/graph_io.h"
+#include "graphlib/random_walk.h"
+#include "graphlib/motif.h"
+#include "graphlib/sparse_graph.h"
+#include "graphlib/temporal_graph.h"
+#include "graphlib/signed_graph.h"
+#include "graphlib/multigraph.h"
+#include "graphlib/parallel.h"
 
 namespace graphlib {
 
