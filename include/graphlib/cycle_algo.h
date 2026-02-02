@@ -15,9 +15,10 @@ namespace graphlib {
  * Uses Karp's Algorithm O(VE).
  * 
  * @param g The directed graph.
+ * @param cycle Optional output parameter to store the vertices of the minimum mean cycle.
  * @return The minimum mean cycle weight. Returns infinity if no cycle exists.
  */
-GRAPHLIB_API double minimum_mean_cycle(const Graph& g);
+GRAPHLIB_API double minimum_mean_cycle(const Graph& g, std::vector<int>* cycle = nullptr);
 
 }
 

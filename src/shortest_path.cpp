@@ -7,6 +7,7 @@
 #include <deque>
 #include <set>
 #include <map>
+#include <functional>
 
 namespace graphlib {
 
@@ -305,6 +306,73 @@ std::vector<long long> ShortestPath::a_star(int source, int target, const std::v
     return dist;
 }
 
+std::vector<int> ShortestPath::astar_search(int source, int target, std::function<long long(int)> heuristic, long long inf) {
+    if (source < 0 || source >= n_ || target < 0 || target >= n_) {
+        return {};
+    }
+
+    std::vector<long long> g_score(n_, inf);
+    std::vector<int> parent(n_, -1);
+    std::vector<bool> closed(n_, false);
+
+    struct Node {
+        int v;
+        long long g;
+        long long f;
+        bool operator>(const Node& other) const {
+            return f > other.f;
+        }
+    };
+
+    std::priority_queue<Node, std::vector<Node>, std::greater<Node>> pq;
+
+    g_score[source] = 0;
+    pq.push(Node{source, 0, heuristic(source)});
+
+    while (!pq.empty()) {
+        Node cur = pq.top();
+        pq.pop();
+
+        int v = cur.v;
+        if (closed[v]) {
+            continue;
+        }
+        if (v == target) {
+            std::vector<int> path;
+            for (int u = target; u != -1; u = parent[u]) {
+                path.push_back(u);
+            }
+            std::reverse(path.begin(), path.end());
+            return path;
+        }
+        closed[v] = true;
+
+        Edge* e = adj_[v];
+        while (e) {
+            if (!e->enabled) {
+                e = e->next;
+                continue;
+            }
+            int to = e->to;
+            long long w = e->weight;
+            if (w < 0) {
+                e = e->next;
+                continue;
+            }
+            long long new_g = cur.g + w;
+            if (new_g < g_score[to]) {
+                g_score[to] = new_g;
+                parent[to] = v;
+                long long f = new_g + heuristic(to);
+                pq.push(Node{to, new_g, f});
+            }
+            e = e->next;
+        }
+    }
+
+    return {};
+}
+
 std::vector<std::vector<long long>> ShortestPath::johnson(long long inf, bool& has_negative_cycle) {
     has_negative_cycle = false;
     int n = n_;
@@ -450,6 +518,14 @@ std::vector<long long> ShortestPath::multi_source_dijkstra(const std::vector<int
     }
 
     return dist;
+}
+
+std::vector<std::vector<long long>> ShortestPath::all_pairs_dijkstra(long long inf) {
+    std::vector<std::vector<long long>> result(n_);
+    for (int s = 0; s < n_; ++s) {
+        result[s] = dijkstra(s, inf);
+    }
+    return result;
 }
 
 long double ShortestPath::minimum_mean_cycle(bool& has_cycle) {
@@ -821,6 +897,125 @@ std::vector<int> ShortestPath::find_negative_cycle(long long inf) {
     // The cycle repeats the start node at end: u, v, w, u.
     
     return cycle;
+}
+
+std::pair<int, std::vector<int>> ShortestPath::bidirectional_bfs(int source, int target) {
+    if (source < 0 || source >= n_ || target < 0 || target >= n_) {
+        throw std::out_of_range("Vertex index out of range");
+    }
+    
+    if (source == target) {
+        return {0, {source}};
+    }
+    
+    std::vector<int> dist_forward(n_, -1);
+    std::vector<int> dist_backward(n_, -1);
+    std::vector<int> parent_forward(n_, -1);
+    std::vector<int> parent_backward(n_, -1);
+    
+    std::queue<int> q_forward, q_backward;
+    
+    dist_forward[source] = 0;
+    dist_backward[target] = 0;
+    q_forward.push(source);
+    q_backward.push(target);
+    
+    int meeting_node = -1;
+    int best_dist = -1;
+    
+    while (!q_forward.empty() || !q_backward.empty()) {
+        if (!q_forward.empty()) {
+            int u = q_forward.front();
+            q_forward.pop();
+            
+            if (dist_backward[u] != -1) {
+                int total = dist_forward[u] + dist_backward[u];
+                if (meeting_node == -1 || total < best_dist) {
+                    meeting_node = u;
+                    best_dist = total;
+                }
+            }
+            
+            Edge* e = adj_[u];
+            while (e) {
+                if (e->enabled && dist_forward[e->to] == -1) {
+                    dist_forward[e->to] = dist_forward[u] + 1;
+                    parent_forward[e->to] = u;
+                    q_forward.push(e->to);
+                    
+                    if (dist_backward[e->to] != -1) {
+                        int total = dist_forward[e->to] + dist_backward[e->to];
+                        if (meeting_node == -1 || total < best_dist) {
+                            meeting_node = e->to;
+                            best_dist = total;
+                        }
+                    }
+                }
+                e = e->next;
+            }
+        }
+        
+        if (meeting_node != -1 && (q_forward.empty() || dist_forward[q_forward.front()] >= best_dist)) {
+            break;
+        }
+        
+        if (!q_backward.empty()) {
+            int u = q_backward.front();
+            q_backward.pop();
+            
+            if (dist_forward[u] != -1) {
+                int total = dist_forward[u] + dist_backward[u];
+                if (meeting_node == -1 || total < best_dist) {
+                    meeting_node = u;
+                    best_dist = total;
+                }
+            }
+            
+            for (int v = 0; v < n_; ++v) {
+                Edge* e = adj_[v];
+                while (e) {
+                    if (e->enabled && e->to == u && dist_backward[v] == -1) {
+                        dist_backward[v] = dist_backward[u] + 1;
+                        parent_backward[v] = u;
+                        q_backward.push(v);
+                        
+                        if (dist_forward[v] != -1) {
+                            int total = dist_forward[v] + dist_backward[v];
+                            if (meeting_node == -1 || total < best_dist) {
+                                meeting_node = v;
+                                best_dist = total;
+                            }
+                        }
+                    }
+                    e = e->next;
+                }
+            }
+        }
+        
+        if (meeting_node != -1 && (q_backward.empty() || dist_backward[q_backward.front()] >= best_dist)) {
+            break;
+        }
+    }
+    
+    if (meeting_node == -1) {
+        return {-1, {}};
+    }
+    
+    std::vector<int> path;
+    int curr = meeting_node;
+    while (curr != -1) {
+        path.push_back(curr);
+        curr = parent_forward[curr];
+    }
+    std::reverse(path.begin(), path.end());
+    
+    curr = parent_backward[meeting_node];
+    while (curr != -1) {
+        path.push_back(curr);
+        curr = parent_backward[curr];
+    }
+    
+    return {best_dist, path};
 }
 
 std::vector<int> topological_sort(const Graph& g) {

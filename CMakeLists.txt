@@ -64,6 +64,9 @@ set(GRAPHLIB_SOURCES
     src/multigraph.cpp
     src/parallel.cpp
     src/hypergraph.cpp
+    src/two_sat.cpp
+    src/clique.cpp
+    src/coloring.cpp
 )
 
 set(GRAPHLIB_HEADERS
@@ -112,6 +115,9 @@ set(GRAPHLIB_HEADERS
     include/graphlib/parallel.h
     include/graphlib/hypergraph.h
     include/graphlib/graphlib.h
+    include/graphlib/two_sat.h
+    include/graphlib/clique.h
+    include/graphlib/coloring.h
 )
 
 add_library(graphlib ${GRAPHLIB_SOURCES})

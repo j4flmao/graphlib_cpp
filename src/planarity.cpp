@@ -11,9 +11,6 @@ namespace graphlib {
 
 namespace {
 
-// Demoucron-Malgrange-Pertuiset Algorithm for Planarity Testing
-// O(V^2) implementation.
-
 struct EdgeRec {
     int u, v;
     bool operator<(const EdgeRec& other) const {
@@ -25,12 +22,8 @@ struct EdgeRec {
     }
 };
 
-// Represents a face in the embedding (sequence of vertices)
 using Face = std::vector<int>;
 
-// Find a path between two sets of vertices (contact points) within a fragment
-// Returns the path vertices including endpoints.
-// used_edges tracks edges already embedded.
 bool find_path_in_fragment(
     int start_node,
     const std::set<int>& contacts,
@@ -58,7 +51,6 @@ bool find_path_in_fragment(
         }
 
         for (int v : adj[u]) {
-            // Check if edge (u,v) is embedded
             EdgeRec e1 = {std::min(u,v), std::max(u,v)};
             if (embedded_edges.count(e1)) continue;
 
@@ -76,32 +68,38 @@ bool find_path_in_fragment(
             path.push_back(curr);
             curr = p[curr];
         }
-        // Path is target -> start. Reverse it if needed, but for edges it doesn't matter.
-        // Let's reverse to be nice.
         std::reverse(path.begin(), path.end());
         return true;
     }
     return false;
 }
 
-// Identify fragments
-// A fragment is a connected component of G \ G_embedded.
-// Plus all edges incident to that component from G_embedded.
-// Contact vertices are vertices in the fragment that are already embedded.
 struct Fragment {
-    std::set<int> vertices; // vertices strictly inside the fragment (not embedded)
-    std::set<EdgeRec> edges; // edges belonging to this fragment
-    std::set<int> contacts; // vertices in fragment that are already embedded
+    std::set<int> vertices;
+    std::set<EdgeRec> edges;
+    std::set<int> contacts;
 };
 
 } // namespace
 
 bool is_planar(const Graph& g) {
+    int n = g.vertex_count();
+    if (n <= 4) return true;
+    
+    // Count edges
+    int m = 0;
+    for (int i = 0; i < n; ++i) {
+        for (Edge* e = g.get_edges(i); e; e = e->next) {
+            if (e->to > i) m++;
+        }
+    }
+    
+    // Euler's formula bound
+    if (m > 3 * n - 6) return false;
+    
+    // For small graphs, use the full embedding algorithm
+    // For now, use a simplified check
     auto faces = get_planar_faces(g);
-    // If graph is non-empty and faces is empty (and not a single point/tree case handled inside),
-    // it implies non-planar.
-    // However, get_planar_faces returns non-empty for trees/single nodes too (outer face).
-    // If returns empty for non-empty graph, it failed.
     if (g.vertex_count() > 0 && faces.empty()) return false;
     return true;
 }
@@ -110,7 +108,7 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
     int n = g.vertex_count();
     if (n == 0) return {};
     
-    // 1. Pre-check Euler (Upper bound on edges)
+    // Count edges and build adjacency
     int m = 0;
     std::vector<std::vector<int>> adj(n);
     for (int i = 0; i < n; ++i) {
@@ -120,23 +118,17 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
                 m++;
             }
             adj[i].push_back(e->to);
-            if (e->to < n) {
-                 // For undirected graph built this way, we might need to be careful not to duplicate
-                 // But wait, the previous code constructed 'adj' manually.
-                 // If graph is already undirected in storage, it's fine.
-                 // We will clean duplicates later anyway.
-                 adj[e->to].push_back(i); 
-            }
             e = e->next;
         }
     }
+    
     // Remove duplicates in adj
-    for(int i=0; i<n; ++i) {
+    for(int i = 0; i < n; ++i) {
         std::sort(adj[i].begin(), adj[i].end());
         adj[i].erase(std::unique(adj[i].begin(), adj[i].end()), adj[i].end());
     }
 
-    if (n > 4 && m > 3 * n - 6) return {}; // Too many edges, not planar
+    if (n > 4 && m > 3 * n - 6) return {};
 
     std::vector<int> global_visited(n, 0);
     std::vector<std::vector<int>> all_faces;
@@ -144,7 +136,7 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
     for (int start_node = 0; start_node < n; ++start_node) {
         if (global_visited[start_node]) continue;
 
-        // Extract component
+        // Extract component via BFS
         std::vector<int> component_nodes;
         std::vector<int> q_bfs;
         q_bfs.push_back(start_node);
@@ -153,62 +145,6 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
         
         int head = 0;
         while(head < static_cast<int>(q_bfs.size())){
-            int u = q_bfs[head++];
-            
-            // Add all edges from u
-            std::vector<EdgeRec> edges;
-            for(int v : adj[u]){
-                if(u < v) edges.push_back({u, v});
-                else edges.push_back({v, u});
-            }
-            // Sorting edges to ensure deterministic order isn't strictly necessary for correctness 
-            // but good for testing.
-            
-            // Process edges using a queue for faces... 
-            // Simplified: classic algorithm uses rotation systems.
-            // Here, we just do a simple BFS traversal that mimics face finding 
-            // by "turning left" (or right).
-            
-            // Actually, for embedding, we need an embedding (rotation system).
-            // Without a rotation system, "faces" are not well defined for general graphs.
-            // But if we assume we just want specific cycles...
-            
-            // Let's implement a specific face finding for planar geometric graphs?
-            // Or assume the graph is represented by its embedding?
-            // The problem statement implies we find planar faces.
-            // DMP gives us an embedding.
-            
-            // Since DMP above didn't produce a full rotation system output, 
-            // we can't reliably extract faces without re-running a planarity ALG 
-            // that produces embedding.
-            
-            // FOR NOW: Return a placeholder or simple cycles if trivial.
-            // Re-implementing full embedding-to-faces is complex.
-        }
-
-        // To clear the error, we'll just cast the other loop too if it existed or was shown.
-        // Wait, line 262 was shown in the error.
-        
-        auto traverse_face = [&](int u_start, int v_start) {
-                std::vector<int> face;
-                // mock implementation to satisfy compiler
-                int curr = u_start;
-                // int next = v_start;
-                face.push_back(curr);
-                
-                // ... traversal logic ...
-                
-                return face;
-        };
-
-        // If we revisit the error:
-        // 262: while(head < q_edges.size()) {
-        
-        return faces; // Placeholder
-    }
-    
-    // The previous replace was too broad. let's target the exact lines.
-
             int u = q_bfs[head++];
             for(int v : adj[u]){
                 if(!global_visited[v]){
@@ -219,39 +155,41 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
             }
         }
 
-        auto component_embedding = [&](const std::vector<int>& nodes) -> std::vector<Face> {
-             // For very small components, e.g. single node or edge or K4
-            int comp_n = (int)nodes.size();
+        // Component embedding lambda
+        auto component_embedding = [&adj](const std::vector<int>& nodes) -> std::vector<Face> {
+            int comp_n = static_cast<int>(nodes.size());
             
-            // Re-check Euler locally
+            // Count edges in component
             int comp_m = 0;
-             for(int u : nodes) {
+            for(int u : nodes) {
                 for(int v : adj[u]) {
                     if (u < v) comp_m++;
                 }
             }
             if (comp_n > 4 && comp_m > 3 * comp_n - 6) return {};
 
-            // 2. Find initial cycle
+            // Find initial cycle using DFS
             std::map<int, int> visited_dfs;
             std::map<int, int> parent_dfs;
-            for(int u : nodes) { visited_dfs[u] = 0; parent_dfs[u] = -1; }
+            for(int u : nodes) { 
+                visited_dfs[u] = 0; 
+                parent_dfs[u] = -1; 
+            }
             
             std::vector<int> cycle;
             
-            // Helper for DFS in component
             std::function<bool(int, int)> dfs_cycle = [&](int u, int p) -> bool {
                 visited_dfs[u] = 1;
                 parent_dfs[u] = p;
                 for (int v : adj[u]) {
                     if (v == p) continue;
+                    if (visited_dfs.count(v) == 0) continue; // Not in component
                     if (visited_dfs[v]) {
-                        // Cycle detected
                         int curr = u;
                         while (curr != v) {
                             cycle.push_back(curr);
                             curr = parent_dfs[curr];
-                            if (curr == -1) break; // Should not happen
+                            if (curr == -1) break;
                         }
                         cycle.push_back(v);
                         return true;
@@ -262,29 +200,17 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
             };
 
             if (!dfs_cycle(nodes[0], -1)) {
-                // No cycle = Tree. Planar. 
-                // Return one face containing all edges (walking around the tree).
-                // Or just empty faces? Usually planar embedding of tree is just one outer face.
-                // Let's return {nodes} as a "face" or similar isn't quite right.
-                // Standard: walk the perimeter (Euler tour).
-                // Or simply return {nodes} if requested? No, faces are cycles.
-                // A tree technically has 1 face (the unbounded one).
-                // We'll return empty vector to signal "it's a tree/forest", but the function should return faces.
-                // We can construct a specific "face" that visits all vertices twice if we strictly follow embedding.
-                // For simplicity, we return a single face containing all vertices in component (not topologically exact).
-                // Actually, let's just return a dummy face for tree components if strict topology is not Critical.
-                // Or: return nothing for faces, as faces are bounded regions (except outer).
-                // But the outer face *is* a face.
+                // No cycle = Tree, planar
                 std::vector<int> outer_face = nodes;
                 return {outer_face};
             }
 
-            // 3. Initial Embedding
+            // Initial Embedding
             std::vector<Face> faces;
             faces.push_back(cycle);
             std::vector<int> outer = cycle;
             std::reverse(outer.begin(), outer.end());
-            faces.push_back(outer); // Outer face
+            faces.push_back(outer);
 
             std::set<EdgeRec> embedded_edges;
             std::set<int> embedded_vertices;
@@ -295,9 +221,8 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
                 embedded_vertices.insert(u);
             }
 
-            // Main Loop
-            while (embedded_edges.size() < (size_t)comp_m) {
-                // 4. Identify Fragments
+            // Main Loop - embed remaining edges
+            while (static_cast<int>(embedded_edges.size()) < comp_m) {
                 std::vector<Fragment> fragments;
                 std::set<EdgeRec> visited_edges;
 
@@ -314,9 +239,9 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
                         visited_edges.insert(e);
                         frag.edges.insert(e);
 
-                        int head = 0;
-                        while(head < static_cast<int>(q_edges.size())) {
-                            EdgeRec curr = q_edges[head++];
+                        int edge_head = 0;
+                        while(edge_head < static_cast<int>(q_edges.size())) {
+                            EdgeRec curr = q_edges[edge_head++];
                             int u1 = curr.u;
                             int v1 = curr.v;
 
@@ -348,8 +273,8 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
 
                 if (fragments.empty()) break;
 
-                // 5. Determine Admissible Faces
-                int min_admissible = 1e9;
+                // Determine Admissible Faces
+                int min_admissible = 1000000000;
                 int best_frag_idx = -1;
                 std::vector<std::vector<int>> admissible_faces(fragments.size());
 
@@ -359,8 +284,6 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
                         const auto& face = faces[f_idx];
                         bool all_in = true;
                         
-                        // Check if all contacts are in this face
-                        // Optimizable: use hash set for face vertices
                         std::set<int> face_set(face.begin(), face.end());
                         for (int c : frag.contacts) {
                             if (face_set.find(c) == face_set.end()) {
@@ -369,15 +292,15 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
                             }
                         }
                         if (all_in) {
-                            admissible_faces[i].push_back((int)f_idx);
+                            admissible_faces[i].push_back(static_cast<int>(f_idx));
                         }
                     }
 
                     if (admissible_faces[i].empty()) return {}; // Non-planar
                     
-                    if ((int)admissible_faces[i].size() < min_admissible) {
-                        min_admissible = (int)admissible_faces[i].size();
-                        best_frag_idx = (int)i;
+                    if (static_cast<int>(admissible_faces[i].size()) < min_admissible) {
+                        min_admissible = static_cast<int>(admissible_faces[i].size());
+                        best_frag_idx = static_cast<int>(i);
                     }
                 }
 
@@ -385,28 +308,28 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
                 int chosen_face_idx = admissible_faces[best_frag_idx][0];
                 const auto& face = faces[chosen_face_idx];
 
-                // 7. Find Path
+                // Find Path
                 std::vector<int> path;
                 if (chosen_frag.contacts.size() >= 2) {
                     int u = *chosen_frag.contacts.begin();
                     find_path_in_fragment(u, chosen_frag.contacts, adj, embedded_edges, path);
                 } else {
-                        if (chosen_frag.contacts.empty()) {
-                            return {}; // Should not happen
+                    if (chosen_frag.contacts.empty()) {
+                        return {};
+                    }
+                    int u = *chosen_frag.contacts.begin();
+                    for(const auto& edge : chosen_frag.edges) {
+                        if(edge.u == u || edge.v == u) {
+                            int other = (edge.u == u) ? edge.v : edge.u;
+                            path = {u, other};
+                            break;
                         }
-                        int u = *chosen_frag.contacts.begin();
-                        for(const auto& e : chosen_frag.edges) {
-                            if(e.u == u || e.v == u) {
-                                int other = (e.u == u) ? e.v : e.u;
-                                path = {u, other};
-                                break;
-                            }
-                        }
+                    }
                 }
 
-                // 8. Embed Path
-                int u = path.front(); // u and v must be contacts in face
-                int v = path.back();
+                // Embed Path
+                int path_u = path.front();
+                int path_v = path.back();
 
                 for (size_t i = 0; i < path.size() - 1; ++i) {
                     int p1 = path[i];
@@ -418,34 +341,40 @@ std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
 
                 int idx_u = -1, idx_v = -1;
                 for (size_t i = 0; i < face.size(); ++i) {
-                    if (face[i] == u) idx_u = (int)i;
-                    if (face[i] == v) idx_v = (int)i;
+                    if (face[i] == path_u) idx_u = static_cast<int>(i);
+                    if (face[i] == path_v) idx_v = static_cast<int>(i);
                 }
 
                 std::vector<int> face_path1, face_path2;
-                int curr = idx_u;
-                while (curr != idx_v) {
-                    face_path1.push_back(face[curr]);
-                    curr = (curr + 1) % face.size();
+                int curr_idx = idx_u;
+                while (curr_idx != idx_v) {
+                    face_path1.push_back(face[curr_idx]);
+                    curr_idx = (curr_idx + 1) % static_cast<int>(face.size());
                 }
-                face_path1.push_back(v);
+                face_path1.push_back(path_v);
 
-                curr = idx_v;
-                while (curr != idx_u) {
-                    face_path2.push_back(face[curr]);
-                    curr = (curr + 1) % face.size();
+                curr_idx = idx_v;
+                while (curr_idx != idx_u) {
+                    face_path2.push_back(face[curr_idx]);
+                    curr_idx = (curr_idx + 1) % static_cast<int>(face.size());
                 }
-                face_path2.push_back(u);
+                face_path2.push_back(path_u);
 
                 std::vector<int> p_inner;
-                for(size_t i=1; i<path.size()-1; ++i) p_inner.push_back(path[i]);
+                for(size_t i = 1; i < path.size() - 1; ++i) {
+                    p_inner.push_back(path[i]);
+                }
 
                 // Split face into two
                 std::vector<int> new_face1 = face_path1;
-                for(int i=(int)p_inner.size()-1; i>=0; --i) new_face1.push_back(p_inner[i]);
+                for(int i = static_cast<int>(p_inner.size()) - 1; i >= 0; --i) {
+                    new_face1.push_back(p_inner[i]);
+                }
 
                 std::vector<int> new_face2 = face_path2;
-                for(size_t i=0; i<p_inner.size(); ++i) new_face2.push_back(p_inner[i]);
+                for(size_t i = 0; i < p_inner.size(); ++i) {
+                    new_face2.push_back(p_inner[i]);
+                }
 
                 faces[chosen_face_idx] = new_face1;
                 faces.push_back(new_face2);

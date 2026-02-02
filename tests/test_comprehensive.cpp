@@ -67,9 +67,9 @@ TEST(CornerCases, MSTDisconnected) {
 }
 
 TEST(CornerCases, SCCSingleNode) {
-    SCC g(1);
-    std::vector<int> comp(1);
-    int count = g.tarjan(comp);
+    Graph g(1, true);  // directed
+    int count;
+    auto comp = strongly_connected_components(g, count);
     EXPECT_EQ(count, 1);
     EXPECT_EQ(comp[0], 0);
 }

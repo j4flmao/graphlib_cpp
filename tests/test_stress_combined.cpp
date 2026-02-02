@@ -183,15 +183,15 @@ TEST(StressCombined, Connectivity_BFSVsKosaraju) {
 
     for (int t = 0; t < num_trials; ++t) {
         Connectivity g(n); // Use Connectivity class
-        SCC scc_solver(n); 
+        Graph scc_graph(n, true); // Directed graph for SCC
         
         for (int i = 0; i < n; ++i) {
             for (int j = i + 1; j < n; ++j) {
                 if (dist_prob(rng) < 0.1) {
                     g.add_edge(i, j);
                     
-                    scc_solver.add_edge(i, j);
-                    scc_solver.add_edge(j, i);
+                    scc_graph.add_edge(i, j);
+                    scc_graph.add_edge(j, i);
                 }
             }
         }
@@ -199,8 +199,8 @@ TEST(StressCombined, Connectivity_BFSVsKosaraju) {
         std::vector<int> comp_bfs;
         int bfs_components = g.connected_components(comp_bfs);
         
-        std::vector<int> comp_scc;
-        int scc_components = scc_solver.kosaraju(comp_scc);
+        int scc_components;
+        auto comp_scc = strongly_connected_components(scc_graph, scc_components);
 
         ASSERT_EQ(bfs_components, scc_components) << "Connectivity mismatch in trial " << t;
     }

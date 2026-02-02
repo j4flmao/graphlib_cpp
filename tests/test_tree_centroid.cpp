@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "graphlib/tree_centroid.h"
+#include "graphlib/centroid_decomposition.h"
 #include <vector>
 
 using namespace graphlib;

@@ -40,6 +40,10 @@ public:
 
     // Helper to get the full centroid tree structure
     std::vector<std::vector<int>> get_tree() const;
+    
+    // Alias methods for compatibility
+    int get_centroid_parent(int u) const;
+    int get_centroid_root() const;
 };
 
 #ifdef _MSC_VER

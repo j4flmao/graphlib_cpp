@@ -543,7 +543,8 @@ std::vector<int> longest_cycle(const Graph& g) {
         int best_len = 0;
         int best_mask = 0;
         int best_end = -1;
-        // int best_start = -1;
+        int best_start = -1;
+        (void)best_start;  // May be unused but needed for completeness
         
         for (int mask = 1; mask < (1 << n); ++mask) {
             int len = static_cast<int>(std::bitset<32>(mask).count());

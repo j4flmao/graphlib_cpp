@@ -1,14 +1,15 @@
 #include <iostream>
 #include <vector>
 #include <graphlib/graphlib.h>
+#include <graphlib/two_sat.h>
 
 int main() {
     int n = 3;
-    graphlib::TwoSAT sat(n);
+    graphlib::TwoSat sat(n);
 
     sat.add_clause(0, true, 1, true);
     sat.add_clause(0, false, 2, true);
-    sat.add_unit_clause(1, false);
+    sat.add_implication(1, false);
 
     std::vector<bool> assignment;
     bool ok = sat.solve(assignment);

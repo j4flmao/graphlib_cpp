@@ -4,6 +4,9 @@
 #include "export.h"
 #include "graph_core.h"
 #include <vector>
+#include <utility>
+#include <functional>
+#include <climits>
 
 namespace graphlib {
 
@@ -39,8 +42,10 @@ public:
     std::vector<long long> bellman_ford(int source, long long inf, bool& has_negative_cycle);
     std::vector<std::vector<long long>> floyd_warshall(long long inf);
     std::vector<long long> a_star(int source, int target, const std::vector<long long>& heuristic, long long inf);
+    std::vector<int> astar_search(int source, int target, std::function<long long(int)> heuristic, long long inf = LLONG_MAX/4);
     std::vector<std::vector<long long>> johnson(long long inf, bool& has_negative_cycle);
     std::vector<long long> multi_source_dijkstra(const std::vector<int>& sources, long long inf);
+    std::vector<std::vector<long long>> all_pairs_dijkstra(long long inf = LLONG_MAX/4);
     long double minimum_mean_cycle(bool& has_cycle);
     
     // Returns the K shortest paths from source to target.
@@ -51,6 +56,11 @@ public:
     // Finds a negative weight cycle.
     // Returns the cycle path (vertices). Empty if no negative cycle.
     std::vector<int> find_negative_cycle(long long inf);
+
+    // Bidirectional BFS for unweighted shortest path.
+    // Returns (distance, path) from source to target.
+    // Returns (-1, empty) if no path exists.
+    std::pair<int, std::vector<int>> bidirectional_bfs(int source, int target);
 
 private:
     std::vector<long long> dijkstra_with_path(int source, int target, long long inf, std::vector<int>& parent);

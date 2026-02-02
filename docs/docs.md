@@ -447,9 +447,16 @@ API module documents and examples:
 - [DOCS_CLIQUE.md](DOCS_CLIQUE.md) – Maximum Clique (Bron-Kerbosch).
 - [DOCS_COLORING.md](DOCS_COLORING.md) – Graph Coloring (DSATUR).
 - [DOCS_NP_HARD.md](DOCS_NP_HARD.md) – NP-Hard Problems (TSP, Chinese Postman).
-- [DOCS_MULTIGRAPH.md](DOCS_MULTIGRAPH.md) – Multigraphs.
+- [DOCS_MULTIGRAPH.md](DOCS_MULTIGRAPH.md) – Multigraphs and Hypergraphs.
 - [DOCS_COMMUNITY.md](DOCS_COMMUNITY.md) – Community Detection (Louvain).
-- [DOCS_HYPERGRAPH.md](DOCS_HYPERGRAPH.md) – Hypergraphs.
+- [DOCS_CYCLE_BASIS.md](DOCS_CYCLE_BASIS.md) – Minimum Cycle Basis, Fundamental Cycles, Girth.
+- [DOCS_GRAPH_IO.md](DOCS_GRAPH_IO.md) – Graph I/O (Edge List, DIMACS, CSV, DOT).
+- [DOCS_RANDOM_WALK.md](DOCS_RANDOM_WALK.md) – Random Walks, Node2Vec, Hitting Time.
+- [DOCS_MOTIF.md](DOCS_MOTIF.md) – Network Motifs, Triangle Counting, Graphlets.
+- [DOCS_SPARSE_GRAPH.md](DOCS_SPARSE_GRAPH.md) – CSR/CSC/COO Compressed Formats.
+- [DOCS_TEMPORAL_GRAPH.md](DOCS_TEMPORAL_GRAPH.md) – Temporal Graphs, Time-varying Networks.
+- [DOCS_SIGNED_GRAPH.md](DOCS_SIGNED_GRAPH.md) – Signed Graphs, Balance Theory.
+- [DOCS_PARALLEL.md](DOCS_PARALLEL.md) – Parallel Algorithms (BFS, PageRank, etc.).
 
 ---
 

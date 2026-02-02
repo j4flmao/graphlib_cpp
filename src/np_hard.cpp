@@ -961,4 +961,175 @@ std::vector<int> feedback_vertex_set_approx(const Graph& g) {
     return fvs;
 }
 
+// -----------------------------------------------------------------------------
+// Hamiltonian Path Detection
+// -----------------------------------------------------------------------------
+
+namespace {
+    bool hamiltonian_backtrack(const std::vector<std::vector<bool>>& adj, int n,
+                               std::vector<int>& path, std::vector<bool>& visited, int count) {
+        if (count == n) return true;
+        
+        int last = path.back();
+        
+        // Pruning: check if remaining vertices form a connected component
+        // that can be reached from the current path
+        for (int v = 0; v < n; ++v) {
+            if (!visited[v] && adj[last][v]) {
+                visited[v] = true;
+                path.push_back(v);
+                
+                if (hamiltonian_backtrack(adj, n, path, visited, count + 1)) {
+                    return true;
+                }
+                
+                path.pop_back();
+                visited[v] = false;
+            }
+        }
+        
+        return false;
+    }
+    
+    std::vector<int> find_hamiltonian_path_backtrack(const std::vector<std::vector<bool>>& adj, int n) {
+        std::vector<int> path;
+        std::vector<bool> visited(n, false);
+        
+        // Try each vertex as starting point
+        for (int start = 0; start < n; ++start) {
+            path.clear();
+            std::fill(visited.begin(), visited.end(), false);
+            
+            path.push_back(start);
+            visited[start] = true;
+            
+            if (hamiltonian_backtrack(adj, n, path, visited, 1)) {
+                return path;
+            }
+        }
+        
+        return {};
+    }
+    
+    std::vector<int> find_hamiltonian_path_bitmask(const std::vector<std::vector<bool>>& adj, int n) {
+        // dp[mask][v] = true if there's a path visiting vertices in mask ending at v
+        std::vector<std::vector<bool>> dp(1 << n, std::vector<bool>(n, false));
+        // parent[mask][v] = {prev_mask, prev_v} for path reconstruction
+        std::vector<std::vector<std::pair<int, int>>> parent(1 << n, std::vector<std::pair<int, int>>(n, {-1, -1}));
+        
+        // Initialize: single vertex paths
+        for (int v = 0; v < n; ++v) {
+            dp[1 << v][v] = true;
+        }
+        
+        // Fill DP table
+        for (int mask = 1; mask < (1 << n); ++mask) {
+            for (int v = 0; v < n; ++v) {
+                if (!((mask >> v) & 1) || !dp[mask][v]) continue;
+                
+                for (int u = 0; u < n; ++u) {
+                    if (((mask >> u) & 1) || !adj[v][u]) continue;
+                    
+                    int next_mask = mask | (1 << u);
+                    if (!dp[next_mask][u]) {
+                        dp[next_mask][u] = true;
+                        parent[next_mask][u] = {mask, v};
+                    }
+                }
+            }
+        }
+        
+        // Check if full path exists and reconstruct
+        int full_mask = (1 << n) - 1;
+        for (int v = 0; v < n; ++v) {
+            if (dp[full_mask][v]) {
+                // Reconstruct path
+                std::vector<int> path;
+                int mask = full_mask;
+                int curr = v;
+                
+                while (mask != 0) {
+                    path.push_back(curr);
+                    auto [prev_mask, prev_v] = parent[mask][curr];
+                    if (prev_mask == -1) break;
+                    mask = prev_mask;
+                    curr = prev_v;
+                }
+                
+                std::reverse(path.begin(), path.end());
+                return path;
+            }
+        }
+        
+        return {};
+    }
+}
+
+bool has_hamiltonian_path(const Graph& g) {
+    int n = g.vertex_count();
+    if (n == 0) return true;
+    if (n == 1) return true;
+    
+    // Build adjacency matrix
+    std::vector<std::vector<bool>> adj(n, std::vector<bool>(n, false));
+    for (int u = 0; u < n; ++u) {
+        Edge* e = g.get_edges(u);
+        while (e) {
+            if (e->to != u) adj[u][e->to] = true;
+            e = e->next;
+        }
+    }
+    
+    if (n <= 20) {
+        // Use bitmask DP - just check existence
+        std::vector<std::vector<bool>> dp(1 << n, std::vector<bool>(n, false));
+        
+        for (int v = 0; v < n; ++v) {
+            dp[1 << v][v] = true;
+        }
+        
+        for (int mask = 1; mask < (1 << n); ++mask) {
+            for (int v = 0; v < n; ++v) {
+                if (!((mask >> v) & 1) || !dp[mask][v]) continue;
+                
+                for (int u = 0; u < n; ++u) {
+                    if (((mask >> u) & 1) || !adj[v][u]) continue;
+                    dp[mask | (1 << u)][u] = true;
+                }
+            }
+        }
+        
+        int full_mask = (1 << n) - 1;
+        for (int v = 0; v < n; ++v) {
+            if (dp[full_mask][v]) return true;
+        }
+        return false;
+    } else {
+        // Use backtracking for larger graphs
+        return !find_hamiltonian_path_backtrack(adj, n).empty();
+    }
+}
+
+std::vector<int> find_hamiltonian_path(const Graph& g) {
+    int n = g.vertex_count();
+    if (n == 0) return {};
+    if (n == 1) return {0};
+    
+    // Build adjacency matrix
+    std::vector<std::vector<bool>> adj(n, std::vector<bool>(n, false));
+    for (int u = 0; u < n; ++u) {
+        Edge* e = g.get_edges(u);
+        while (e) {
+            if (e->to != u) adj[u][e->to] = true;
+            e = e->next;
+        }
+    }
+    
+    if (n <= 20) {
+        return find_hamiltonian_path_bitmask(adj, n);
+    } else {
+        return find_hamiltonian_path_backtrack(adj, n);
+    }
+}
+
 }

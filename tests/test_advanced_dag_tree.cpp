@@ -67,25 +67,25 @@ TEST(DAGAdvancedTest, SCCCondensationStructure) {
     // SCC3: 5 (single node)
     // Edges: SCC1 -> SCC2, SCC2 -> SCC3, SCC1 -> SCC3
     
-    SCC scc_solver(6);
+    Graph g(6);
     // SCC1
-    scc_solver.add_edge(0, 1); scc_solver.add_edge(1, 2); scc_solver.add_edge(2, 0);
+    g.add_edge(0, 1); g.add_edge(1, 2); g.add_edge(2, 0);
     // SCC2
-    scc_solver.add_edge(3, 4); scc_solver.add_edge(4, 3);
+    g.add_edge(3, 4); g.add_edge(4, 3);
     // SCC3 is 5
     
     // Inter-SCC edges
-    scc_solver.add_edge(1, 3); // SCC1 -> SCC2
-    scc_solver.add_edge(4, 5); // SCC2 -> SCC3
-    scc_solver.add_edge(2, 5); // SCC1 -> SCC3
+    g.add_edge(1, 3); // SCC1 -> SCC2
+    g.add_edge(4, 5); // SCC2 -> SCC3
+    g.add_edge(2, 5); // SCC1 -> SCC3
     
-    std::vector<int> components(6);
-    int count = scc_solver.tarjan(components);
+    int count;
+    std::vector<int> components = strongly_connected_components(g, count);
     
     EXPECT_EQ(count, 3);
     
     // Condense
-    DAG condensation = build_scc_condensation_dag(scc_solver, components, count);
+    DAG condensation = build_scc_condensation_dag(g, components, count);
     
     // Check DAG property (no cycles)
     bool has_cycle = false;

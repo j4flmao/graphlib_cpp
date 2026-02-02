@@ -225,7 +225,7 @@ GRAPHLIB_API void parallel_for_edges(const Graph& g, std::function<void(int, int
  * @brief Parallel reduction over vertices.
  */
 template<typename T>
-GRAPHLIB_API T parallel_reduce_vertices(const Graph& g, std::function<T(int)> map_func,
+T parallel_reduce_vertices(const Graph& g, std::function<T(int)> map_func,
                                          std::function<T(T, T)> reduce_func, T identity,
                                          ExecutionPolicy policy = ExecutionPolicy::Parallel) {
     int n = g.vertex_count();

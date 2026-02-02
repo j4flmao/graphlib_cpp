@@ -173,22 +173,15 @@ TEST(FullCoverage, DAGCycleDetection) {
 
 TEST(FullCoverage, SCCCondensation) {
     // 0->1, 1->0 (SCC 1), 2->3, 3->2 (SCC 2), 1->2 (Edge between SCCs)
-    Graph g(4);
+    Graph g(4, true);
     g.add_edge(0, 1);
     g.add_edge(1, 0);
     g.add_edge(2, 3);
     g.add_edge(3, 2);
     g.add_edge(1, 2);
     
-    SCC scc_solver(4);
-    scc_solver.add_edge(0, 1);
-    scc_solver.add_edge(1, 0);
-    scc_solver.add_edge(2, 3);
-    scc_solver.add_edge(3, 2);
-    scc_solver.add_edge(1, 2);
-    
-    std::vector<int> components;
-    int count = scc_solver.tarjan(components);
+    int count;
+    std::vector<int> components = strongly_connected_components(g, count);
     
     DAG dag = build_scc_condensation_dag(g, components, count);
     EXPECT_EQ(dag.vertex_count(), 2);

@@ -87,4 +87,12 @@ std::vector<std::vector<int>> CentroidDecomposition::get_tree() const {
     return tree;
 }
 
+int CentroidDecomposition::get_centroid_parent(int u) const {
+    return get_parent(u);
+}
+
+int CentroidDecomposition::get_centroid_root() const {
+    return get_root();
+}
+
 } // namespace graphlib

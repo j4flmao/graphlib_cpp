@@ -61,3 +61,53 @@ TEST(ShortestPathTest, TopologicalSortCycle) {
     std::vector<int> order = topological_sort(g);
     EXPECT_TRUE(order.empty());
 }
+
+TEST(ShortestPathTest, BidirectionalBFS_Basic) {
+    // 0 -- 1 -- 2 -- 3
+    ShortestPath sp(4);
+    sp.add_edge(0, 1, 1);
+    sp.add_edge(1, 0, 1);
+    sp.add_edge(1, 2, 1);
+    sp.add_edge(2, 1, 1);
+    sp.add_edge(2, 3, 1);
+    sp.add_edge(3, 2, 1);
+    
+    auto [dist, path] = sp.bidirectional_bfs(0, 3);
+    EXPECT_EQ(dist, 3);
+    ASSERT_EQ(path.size(), 4);
+    EXPECT_EQ(path[0], 0);
+    EXPECT_EQ(path[3], 3);
+}
+
+TEST(ShortestPathTest, BidirectionalBFS_SameNode) {
+    ShortestPath sp(3);
+    sp.add_edge(0, 1, 1);
+    sp.add_edge(1, 2, 1);
+    
+    auto [dist, path] = sp.bidirectional_bfs(1, 1);
+    EXPECT_EQ(dist, 0);
+    ASSERT_EQ(path.size(), 1);
+    EXPECT_EQ(path[0], 1);
+}
+
+TEST(ShortestPathTest, BidirectionalBFS_NoPath) {
+    ShortestPath sp(3);
+    sp.add_edge(0, 1, 1);
+    // No path from 0 to 2
+    
+    auto [dist, path] = sp.bidirectional_bfs(0, 2);
+    EXPECT_EQ(dist, -1);
+    EXPECT_TRUE(path.empty());
+}
+
+TEST(ShortestPathTest, BidirectionalBFS_DirectConnection) {
+    ShortestPath sp(2);
+    sp.add_edge(0, 1, 1);
+    sp.add_edge(1, 0, 1);
+    
+    auto [dist, path] = sp.bidirectional_bfs(0, 1);
+    EXPECT_EQ(dist, 1);
+    ASSERT_EQ(path.size(), 2);
+    EXPECT_EQ(path[0], 0);
+    EXPECT_EQ(path[1], 1);
+}

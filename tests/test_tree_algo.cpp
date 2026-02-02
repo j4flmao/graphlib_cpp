@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include "graphlib/tree_algo.h"
 
 using namespace graphlib;

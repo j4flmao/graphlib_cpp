@@ -26,7 +26,7 @@ add_executable(graphlib_tests
         test_bipartite.cpp
         test_dag.cpp
         test_splay_tree.cpp
-        test_scc_and_connectivity.cpp
+        test_scc_connectivity_v2.cpp
         test_shortest_path_and_utils.cpp
         test_general_matching.cpp
         test_circulation.cpp

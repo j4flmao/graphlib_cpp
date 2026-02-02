@@ -20,15 +20,15 @@ TEST(Integration, SCC_Condensation_DAG_ShortestPath) {
     // Path lengths in condensation graph (unweighted usually, or we can assume weights).
     // The library function build_scc_condensation_dag likely produces a DAG where edges exist if there is an edge between components.
     
-    SCC scc(6);
-    scc.add_edge(0, 1); scc.add_edge(1, 0);
-    scc.add_edge(2, 3); scc.add_edge(3, 2);
-    scc.add_edge(1, 2);
-    scc.add_edge(2, 4);
-    scc.add_edge(4, 5);
+    Graph g(6, true);
+    g.add_edge(0, 1); g.add_edge(1, 0);
+    g.add_edge(2, 3); g.add_edge(3, 2);
+    g.add_edge(1, 2);
+    g.add_edge(2, 4);
+    g.add_edge(4, 5);
     
-    std::vector<int> components;
-    int count = scc.tarjan(components);
+    int count;
+    auto components = strongly_connected_components(g, count);
     
     EXPECT_EQ(count, 4);
     
@@ -38,7 +38,7 @@ TEST(Integration, SCC_Condensation_DAG_ShortestPath) {
     EXPECT_NE(components[0], components[2]);
     EXPECT_NE(components[2], components[4]);
     
-    DAG condensation = build_scc_condensation_dag(scc, components, count);
+    DAG condensation = build_scc_condensation_dag(g, components, count);
     
     // Verify condensation is a DAG
     bool has_cycle = false;

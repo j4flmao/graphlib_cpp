@@ -142,55 +142,54 @@ std::vector<int> greedy_coloring(const Graph& g) {
 }
 
 // Backtracking for Exact Chromatic Number
-static void color_backtrack(const Graph& g, int idx, int n, int current_max, std::vector<int>& colors, int& min_colors) {
-    if (current_max >= min_colors) return; // Pruning
+static void color_backtrack(const Graph& g, int idx, int n, int num_colors_used, std::vector<int>& colors, int& min_colors) {
+    if (num_colors_used >= min_colors) return; // Pruning
     
     if (idx == n) {
-        min_colors = std::min(min_colors, current_max);
+        min_colors = std::min(min_colors, num_colors_used);
         return;
     }
     
-    // Try to color vertex idx with colors 0 to current_max
-    // Or new color current_max + 1
-    
-    for (int c = 0; c <= current_max; ++c) { // Try existing colors
+    // Try to color vertex idx with colors 0 to num_colors_used-1
+    for (int c = 0; c < num_colors_used; ++c) {
         if (can_color(g, idx, c, colors)) {
             colors[idx] = c;
-            color_backtrack(g, idx + 1, n, current_max, colors, min_colors);
-            colors[idx] = -1; // Undo
+            color_backtrack(g, idx + 1, n, num_colors_used, colors, min_colors);
+            colors[idx] = -1;
         }
     }
     
     // Try new color
-    int new_c = current_max + 1;
-    if (new_c < min_colors) {
-        if (can_color(g, idx, new_c, colors)) {
-            colors[idx] = new_c;
-            color_backtrack(g, idx + 1, n, new_c, colors, min_colors);
-            colors[idx] = -1;
-        }
+    if (num_colors_used < min_colors - 1) {
+        colors[idx] = num_colors_used;
+        color_backtrack(g, idx + 1, n, num_colors_used + 1, colors, min_colors);
+        colors[idx] = -1;
     }
 }
 
 GRAPHLIB_API int chromatic_number(const Graph& g) {
     int n = g.vertex_count();
     if (n == 0) return 0;
+    if (n == 1) return 1;
+    
+    // Check if graph has any edges
+    bool has_edges = false;
+    for (int i = 0; i < n && !has_edges; ++i) {
+        if (g.get_edges(i) != nullptr) has_edges = true;
+    }
+    if (!has_edges) return 1;
     
     // Initial bound from greedy
-    std::vector<int> greedy = greedy_coloring(g);
+    std::vector<int> greedy_colors = greedy_coloring(g);
     int max_c = 0;
-    for(int c : greedy) max_c = std::max(max_c, c);
+    for(int c : greedy_colors) max_c = std::max(max_c, c);
     
-    int min_colors = max_c + 1; // 1-based count
+    int min_colors = max_c + 1; // 1-based count (greedy upper bound)
     
     std::vector<int> colors(n, -1);
     
-    // Sort vertices by degree desc for better pruning?
-    // Standard backtracking usually processes fixed order 0..N-1.
-    // If graph is small, it's fine.
-    
     colors[0] = 0;
-    color_backtrack(g, 1, n, 0, colors, min_colors);
+    color_backtrack(g, 1, n, 1, colors, min_colors);
     
     return min_colors;
 }

@@ -4,7 +4,7 @@
 
 using namespace graphlib;
 
-TEST(LinkCutTreeTest, BasicOperations) {
+TEST(LinkCutTreeTestV2, BasicOperations) {
     LinkCutTree lct(5);
     
     // Set values

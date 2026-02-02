@@ -9,7 +9,7 @@ using namespace graphlib;
 
 TEST(ParallelTest, BFS) {
     // 100 nodes, connected
-    Graph g = generator::erdos_renyi(100, 0.1);
+    Graph g = generator::random_graph(100, 0.1);
     
     // Sequential
     auto dist_seq = parallel::parallel_bfs(g, 0, parallel::ExecutionPolicy::Sequential);

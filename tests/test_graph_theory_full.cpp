@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <graphlib/graphlib.h>
 #include <graphlib/scc.h>
+#include <graphlib/two_sat.h>
 #include <vector>
 #include <numeric>
 #include <algorithm>
@@ -157,7 +158,7 @@ TEST(GraphTheoryTest, CenterAndDiameter) {
 // 2-SAT Stress Test
 // -----------------------------------------------------------------------------
 
-TEST(GraphTheoryTest, TwoSATStress) {
+TEST(GraphTheoryTest, TwoSatStress) {
     // Random 2-SAT instances
     // If satisfiable, check assignment
     int n_vars = 20;
@@ -166,7 +167,7 @@ TEST(GraphTheoryTest, TwoSATStress) {
     std::mt19937 rng(12345);
     
     for(int iter=0; iter<10; ++iter) {
-        TwoSAT sat(n_vars);
+        TwoSat sat(n_vars);
         std::vector<std::pair<int, int>> clauses; // Store for verification
         
         for(int k=0; k<n_clauses; ++k) {
@@ -189,7 +190,7 @@ TEST(GraphTheoryTest, TwoSATStress) {
         
         if (result) {
             // Verify assignment satisfies all clauses?
-            // We can't easily retrieve clauses from TwoSAT object.
+            // We can't easily retrieve clauses from TwoSat object.
             // But we can trust the solver + basic tests.
             // This stress test mainly checks for crashes/inconsistencies.
             EXPECT_EQ(assignment.size(), (size_t)n_vars);

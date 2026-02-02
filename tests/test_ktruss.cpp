@@ -17,8 +17,10 @@ TEST(KTrussTest, Triangle) {
     
     auto truss = k_truss_decomposition(g);
     EXPECT_EQ(truss.size(), 3);
-    EXPECT_EQ(truss[{0, 1}], 3);
-    EXPECT_EQ(truss[{1, 2}], 3); // Depends on order, test map key
+    auto val_01 = truss[{0, 1}];
+    EXPECT_EQ(val_01, 3);
+    auto val_12 = truss[{1, 2}];
+    EXPECT_EQ(val_12, 3); // Depends on order, test map key
 }
 
 TEST(KTrussTest, Butterfly) {
@@ -40,8 +42,10 @@ TEST(KTrussTest, Butterfly) {
     
     // Check if key exists properly
     int u = 0, v = 1; if(u>v) std::swap(u,v);
-    EXPECT_EQ(truss.count({u,v}), 1);
-    EXPECT_EQ(truss[{u,v}], 3);
+    auto count_uv = truss.count({u,v});
+    EXPECT_EQ(count_uv, 1);
+    auto val_uv = truss[{u,v}];
+    EXPECT_EQ(val_uv, 3);
 }
 
 TEST(KTrussTest, K4) {

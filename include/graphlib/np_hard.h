@@ -134,6 +134,28 @@ GRAPHLIB_API std::pair<long long, std::vector<int>> max_cut_approx(const Graph& 
  */
 GRAPHLIB_API std::vector<int> feedback_vertex_set_approx(const Graph& g);
 
+/**
+ * @brief Checks if the graph has a Hamiltonian Path.
+ * A Hamiltonian Path visits every vertex exactly once.
+ * 
+ * Uses bitmask DP for small graphs (n <= 20), backtracking with pruning for larger graphs.
+ * 
+ * @param g The graph.
+ * @return true if a Hamiltonian Path exists, false otherwise.
+ */
+GRAPHLIB_API bool has_hamiltonian_path(const Graph& g);
+
+/**
+ * @brief Finds a Hamiltonian Path in the graph if one exists.
+ * A Hamiltonian Path visits every vertex exactly once.
+ * 
+ * Uses bitmask DP for small graphs (n <= 20), backtracking with pruning for larger graphs.
+ * 
+ * @param g The graph.
+ * @return A vector of vertices representing the path, or empty vector if no path exists.
+ */
+GRAPHLIB_API std::vector<int> find_hamiltonian_path(const Graph& g);
+
 
 }
 
