@@ -2,6 +2,8 @@
 #include "graphlib/graph_generator.h"
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <vector>
+#include <numeric>
 
 using namespace graphlib;
 
@@ -78,7 +80,6 @@ TEST(IsomorphismTest, FindAllMappings) {
 
 TEST(IsomorphismTest, PetersenGraphSelfIsomorphism) {
     // Petersen graph is isomorphic to itself
-    // And is vertex transitive
     Graph petersen(10, false);
     // Outer cycle
     petersen.add_edge(0, 1); petersen.add_edge(1, 2); petersen.add_edge(2, 3); petersen.add_edge(3, 4); petersen.add_edge(4, 0);
@@ -88,13 +89,72 @@ TEST(IsomorphismTest, PetersenGraphSelfIsomorphism) {
     petersen.add_edge(0, 5); petersen.add_edge(1, 6); petersen.add_edge(2, 7); petersen.add_edge(3, 8); petersen.add_edge(4, 9);
     
     EXPECT_TRUE(is_isomorphic(petersen, petersen));
+}
+
+TEST(IsomorphismTest, TreeIsomorphism) {
+    // Two isomorphic trees
+    /*
+        T1:      0
+               /   \
+              1     2
+             / \
+            3   4
+    */
+    Graph t1(5, false);
+    t1.add_edge(0, 1); t1.add_edge(0, 2);
+    t1.add_edge(1, 3); t1.add_edge(1, 4);
+
+    /*
+        T2:      2 (root)
+               /   \
+              0     1 (leaf)
+             / \
+            3   4
+        // Wait, structure must be same.
+        // Root degree 2. One child leaf (degree 1), one child degree 3.
+        // Let's permute explicitly. 
+        // Map 0->2, 1->0, 2->1, 3->3, 4->4
+        2-0, 2-1
+        0-3, 0-4
+    */
+    Graph t2(5, false);
+    t2.add_edge(2, 0); t2.add_edge(2, 1);
+    t2.add_edge(0, 3); t2.add_edge(0, 4);
+
+    EXPECT_TRUE(is_tree_isomorphic(t1, t2));
     
-    // Remove one edge
-    Graph petersen_minus(10, false);
-    // Copy edges except one
-    // ... simpler way: copy and remove edge? Graph doesn't support remove_edge easily yet?
-    // Let's reconstruct.
-    // Actually, just verify self-isomorphism works efficiently.
+    // Non-isomorphic tree (Degree sequence same, structure different? Hard for small trees)
+    // Path 0-1-2-3-4 vs Star 0 connected to 1,2,3,4. Easy.
+    Graph p5(5, false);
+    p5.add_edge(0, 1); p5.add_edge(1, 2); p5.add_edge(2, 3); p5.add_edge(3, 4);
+    
+    Graph s5(5, false);
+    s5.add_edge(0, 1); s5.add_edge(0, 2); s5.add_edge(0, 3); s5.add_edge(0, 4);
+    
+    EXPECT_FALSE(is_tree_isomorphic(p5, s5));
+}
+
+TEST(IsomorphismTest, HardIsomorphism_RegularGraphs) {
+    // Testing two 3-regular graphs on 6 vertices that are NOT isomorphic.
+    // Graph A: Prism graph (Triangle x Edge)
+    Graph g1(6, false);
+    g1.add_edge(0, 1); g1.add_edge(1, 2); g1.add_edge(2, 0); // Triangle 1
+    g1.add_edge(3, 4); g1.add_edge(4, 5); g1.add_edge(5, 3); // Triangle 2
+    g1.add_edge(0, 3); g1.add_edge(1, 4); g1.add_edge(2, 5); // Connect them
+
+    // Graph B: K3,3 (Bipartite Complete)
+    Graph g2(6, false);
+    // Partition {0,1,2} and {3,4,5}
+    for(int i=0; i<3; ++i) {
+        for(int j=3; j<6; ++j) {
+            g2.add_edge(i, j);
+        }
+    }
+    
+    // Both are 3-regular, 6 vertices, 9 edges.
+    // g1 has triangles, g2 (bipartite) has no triangles.
+    // VF2 should detect this easily.
+    EXPECT_FALSE(is_isomorphic(g1, g2));
 }
 
 TEST(IsomorphismTest, IsomorphismCheckWithMapping) {
@@ -109,23 +169,26 @@ TEST(IsomorphismTest, IsomorphismCheckWithMapping) {
     g2.add_edge(1, 2);
     
     std::vector<int> mapping;
-    EXPECT_TRUE(is_isomorphic(g1, g2, &mapping));
+    bool iso = is_isomorphic(g1, g2, &mapping);
+    EXPECT_TRUE(iso);
     
-    // Verify mapping
-    EXPECT_EQ(mapping.size(), 4);
-    // Check if mapping preserves adjacency
-    for (int u = 0; u < 4; ++u) {
-        for (Edge* e1 = g1.get_edges(u); e1 != nullptr; e1 = e1->next) {
-            int v = e1->to;
-            int u_mapped = mapping[u];
-            int v_mapped = mapping[v];
-            
-            // Check if edge exists in g2
-            bool found = false;
-            for (Edge* e2 = g2.get_edges(u_mapped); e2 != nullptr; e2 = e2->next) {
-                if (e2->to == v_mapped) found = true;
+    if (iso) {
+        // Verify mapping
+        EXPECT_EQ(mapping.size(), 4);
+        // Check if mapping preserves adjacency
+        for (int u = 0; u < 4; ++u) {
+            for (Edge* e1 = g1.get_edges(u); e1 != nullptr; e1 = e1->next) {
+                int v = e1->to;
+                int u_mapped = mapping[u];
+                int v_mapped = mapping[v];
+                
+                // Check if edge exists in g2
+                bool found = false;
+                for (Edge* e2 = g2.get_edges(u_mapped); e2 != nullptr; e2 = e2->next) {
+                    if (e2->to == v_mapped) found = true;
+                }
+                EXPECT_TRUE(found) << "Edge " << u << "-" << v << " mapped to " << u_mapped << "-" << v_mapped << " not found in G2";
             }
-            EXPECT_TRUE(found);
         }
     }
 }

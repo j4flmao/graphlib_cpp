@@ -112,6 +112,8 @@ add_executable(graphlib_tests
     test_tsp.cpp
     test_np_hard_extra.cpp
     test_ktruss.cpp
+    test_graph_io.cpp
+    test_signed_graph.cpp
 )
 
 add_executable(debug_matching debug_main.cpp)
