@@ -2,11 +2,12 @@
 
 <div align="center">
 
-[![CI](https://github.com/j4flmao/graphlib_cpp/actions/workflows/cmake.yml/badge.svg)](https://github.com/j4flmao/graphlib_cpp/actions)
+[![CI](https://github.com/j4flmao/graphlib_cpp/actions/workflows/ci.yml/badge.svg)](https://github.com/j4flmao/graphlib_cpp/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![C++17](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.15+-green.svg)](https://cmake.org/)
 [![Vcpkg](https://img.shields.io/badge/Vcpkg-Supported-purple)](https://vcpkg.io/)
+[![Release](https://img.shields.io/badge/release-v1.0.6-blue)](https://github.com/j4flmao/graphlib_cpp/releases/tag/v1.0.6)
 [![Documentation](https://img.shields.io/badge/docs-reference-orange.svg)](docs/)
 
 <br/>
@@ -16,7 +17,7 @@
 [![GitHub watchers](https://img.shields.io/github/watchers/j4flmao/graphlib_cpp?style=social)](https://github.com/j4flmao/graphlib_cpp/watchers)
 [![GitHub contributors](https://img.shields.io/github/contributors/j4flmao/graphlib_cpp?color=blue)](https://github.com/j4flmao/graphlib_cpp/graphs/contributors)
 
-**Professional C++ Graph Algorithms Library**
+**Professional C++ Graph Algorithms Library — v1.0.6**
 
 *High-performance, modern C++17 library designed for academic research and production-grade network analysis.*
 
@@ -60,7 +61,7 @@ Whether you are analyzing social networks, optimizing logistics, or researching 
       <ul>
         <li><b>Shortest Paths</b>: Bidirectional Dijkstra, A*, Johnson, Yen's K-Shortest.</li>
         <li><b>Flow & Cuts</b>: Dinic, Push-Relabel, Min-Cost Max-Flow, Global Min Cut.</li>
-        <li><b>Connectivity</b>: Tarjan's SCC, Bridges, Articulation Points, 2-SAT.</li>
+        <li><b>Connectivity</b>: SCC, dynamic SCC, Bridges, Articulation Points, 2-SAT.</li>
         <li><b>Trees</b>: LCA, Centroid Decomposition, Heavy-Light Decomposition.</li>
       </ul>
     </td>
@@ -106,7 +107,7 @@ include(FetchContent)
 FetchContent_Declare(
   graphlib
   GIT_REPOSITORY https://github.com/j4flmao/graphlib_cpp.git
-  GIT_TAG        main
+  GIT_TAG        v1.0.6
 )
 FetchContent_MakeAvailable(graphlib)
 
@@ -129,6 +130,21 @@ cmake --build build --config Release -j 4
 # 3. Install
 sudo cmake --install build
 ```
+
+For a reproducible dependency, use the `v1.0.6` release tag rather than a
+moving branch. GraphLib is built as a static library by default; set
+`-DBUILD_SHARED_LIBS=ON` when a shared library is required.
+
+---
+
+## 🆕 What's new in v1.0.6
+
+- Added and stabilized SCC, dynamic SCC, and TwoSat compatibility APIs.
+- Improved cross-platform support for GCC, Clang, AppleClang, and MSVC.
+- Fixed static-library export macros and portable CMake test-source checks.
+- Stabilized general matching on small graphs and sanitizer execution time.
+- Hardened coverage generation against GCC/gcov suspicious-hit reports.
+- CI validates 709 GoogleTest cases across the supported build matrix.
 
 ---
 
