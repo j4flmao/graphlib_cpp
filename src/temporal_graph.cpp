@@ -332,13 +332,14 @@ double TemporalGraph::vertex_burstiness(int v) const {
         intervals.push_back(static_cast<double>(times[i] - times[i - 1]));
     }
     
-    double mean = std::accumulate(intervals.begin(), intervals.end(), 0.0) / intervals.size();
+    double mean = std::accumulate(intervals.begin(), intervals.end(), 0.0) /
+                  static_cast<double>(intervals.size());
     
     double sq_sum = 0.0;
     for (double interval : intervals) {
         sq_sum += (interval - mean) * (interval - mean);
     }
-    double sigma = std::sqrt(sq_sum / intervals.size());
+    double sigma = std::sqrt(sq_sum / static_cast<double>(intervals.size()));
     
     if (sigma + mean == 0) return 0.0;
     return (sigma - mean) / (sigma + mean);

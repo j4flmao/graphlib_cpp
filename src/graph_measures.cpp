@@ -166,7 +166,7 @@ std::vector<double> closeness_centrality(const Graph& g) {
             // If we strictly follow "closeness in component", we'd use reachable_count instead of n-1.
             // But let's use n-1 to penalize disconnection.
             if (n > 1) {
-                closeness[u] = static_cast<double>(n - 1) / sum_dist;
+                closeness[u] = static_cast<double>(n - 1) / static_cast<double>(sum_dist);
             }
         }
     }
@@ -327,7 +327,7 @@ std::vector<double> clustering_coefficient(const Graph& g) {
         
         // For undirected graph: possible edges = k * (k-1) / 2
         // We counted each edge once in the inner loop (since it1 < it2).
-        double possible_edges = static_cast<double>(k) * (k - 1) / 2.0;
+        double possible_edges = static_cast<double>(k) * static_cast<double>(k - 1) / 2.0;
         cc[u] = static_cast<double>(edges_between_neighbors) / possible_edges;
     }
     
@@ -340,7 +340,7 @@ double average_clustering_coefficient(const Graph& g) {
     
     double sum = 0.0;
     for (double c : cc) sum += c;
-    return sum / cc.size();
+    return sum / static_cast<double>(cc.size());
 }
 
 std::vector<int> core_number(const Graph& g) {
@@ -591,7 +591,7 @@ double jaccard_index(const Graph& g, int u, int v) {
     
     if (union_size == 0) return 0.0;
     
-    return static_cast<double>(intersection_size) / union_size;
+    return static_cast<double>(intersection_size) / static_cast<double>(union_size);
 }
 
 double adamic_adar_index(const Graph& g, int u, int v) {
@@ -667,14 +667,6 @@ std::vector<int> label_propagation_communities(const Graph& g, int max_iteration
                 // Standard LPA picks random from best.
                 
                 // Optimization: check if current label is already one of the best
-                bool current_is_best = false;
-                for(int l : best_labels) {
-                    if (l == labels[u]) {
-                        current_is_best = true;
-                        break;
-                    }
-                }
-                
                 // If current label is best, we might stay (but random choice is better for ties)
                 // However, strict LPA says: if multiple max, pick random.
                 
@@ -739,7 +731,7 @@ double modularity(const Graph& g, const std::vector<int>& communities) {
                 // For undirected graph stored as directed pairs (u->v, v->u),
                 // this edge counts towards sigma_in of community c_u.
                 // We will sum all such edges.
-                sigma_in[c_u] += e->weight;
+                sigma_in[c_u] += static_cast<double>(e->weight);
             }
             e = e->next;
         }

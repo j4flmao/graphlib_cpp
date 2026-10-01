@@ -5,6 +5,7 @@
 #include <numeric>
 #include <queue>
 #include <functional>
+#include <stdexcept>
 
 namespace graphlib {
 
@@ -24,22 +25,18 @@ TriangleResult count_triangles(const Graph& g) {
     
     if (n == 0) return result;
     
-    // Compute degrees
-    std::vector<int> degree(n, 0);
-    for (int u = 0; u < n; ++u) {
-        for (Edge* e = g.get_edges(u); e; e = e->next) {
-            degree[u]++;
-        }
-    }
-    
-    // Build adjacency set for fast lookup
+    // Motif triangle APIs use the conventional undirected interpretation.
     std::vector<std::unordered_set<int>> adj(n);
     for (int u = 0; u < n; ++u) {
         for (Edge* e = g.get_edges(u); e; e = e->next) {
-            adj[u].insert(e->to);
+            if (e->to >= 0 && e->to < n && e->to != u) {
+                adj[u].insert(e->to);
+                adj[e->to].insert(u);
+            }
         }
     }
-    
+    std::vector<int> degree(n);
+    for (int u = 0; u < n; ++u) degree[u] = static_cast<int>(adj[u].size());
     // Create degree ordering
     std::vector<int> order(n);
     std::iota(order.begin(), order.end(), 0);
@@ -55,11 +52,7 @@ TriangleResult count_triangles(const Graph& g) {
     // Count triangles using node-iterator algorithm
     for (int u = 0; u < n; ++u) {
         std::vector<int> higher_neighbors;
-        for (Edge* e = g.get_edges(u); e; e = e->next) {
-            if (rank[e->to] > rank[u]) {
-                higher_neighbors.push_back(e->to);
-            }
-        }
+        for (int v : adj[u]) if (rank[v] > rank[u]) higher_neighbors.push_back(v);
         
         for (size_t i = 0; i < higher_neighbors.size(); ++i) {
             int v = higher_neighbors[i];
@@ -84,11 +77,14 @@ std::vector<std::tuple<int, int, int>> list_triangles(const Graph& g, int max_tr
     
     if (n == 0) return triangles;
     
-    // Build adjacency set
+    // Use an undirected simple view, matching count_triangles semantics.
     std::vector<std::unordered_set<int>> adj(n);
     for (int u = 0; u < n; ++u) {
         for (Edge* e = g.get_edges(u); e; e = e->next) {
-            adj[u].insert(e->to);
+            if (e->to >= 0 && e->to < n && e->to != u) {
+                adj[u].insert(e->to);
+                adj[e->to].insert(u);
+            }
         }
     }
     
@@ -195,7 +191,7 @@ long long count_k_cliques(const Graph& g, int k) {
     clique.reserve(k);
     
     std::function<void(int, std::vector<int>&)> enumerate;
-    enumerate = [&](int start, std::vector<int>& candidates) {
+    enumerate = [&](int /*start*/, std::vector<int>& candidates) {
         if (static_cast<int>(clique.size()) == k) {
             count++;
             return;
@@ -364,15 +360,27 @@ std::vector<long long> count_graphlets(const Graph& g, int k) {
 }
 
 std::vector<std::vector<long long>> graphlet_degree_distribution(const Graph& g, int max_size) {
+    if (max_size < 3) throw std::invalid_argument("Graphlet degree distribution requires max_size >= 3");
     int n = g.vertex_count();
     std::vector<std::vector<long long>> gdd(n);
-    
-    // Simplified: just return triangle participation for now
-    auto tri_result = count_triangles(g);
-    for (int i = 0; i < n; ++i) {
-        gdd[i].push_back(tri_result.per_vertex[i]);
+    // Three-node graphlets have three useful orbit counts:
+    // orbit 0 = triangle vertex, orbit 1 = center of an induced wedge,
+    // orbit 2 = endpoint of an induced wedge. Use a simple undirected view.
+    std::vector<std::unordered_set<int>> adj(n);
+    for (int u = 0; u < n; ++u) for (Edge* e = g.get_edges(u); e; e = e->next)
+        if (e->to >= 0 && e->to < n && e->to != u) { adj[u].insert(e->to); adj[e->to].insert(u); }
+    auto triangles = count_triangles(g);
+    for (int u = 0; u < n; ++u) {
+        long long center_wedges = 0;
+        long long endpoint_wedges = 0;
+        for (int v : adj[u]) for (int w : adj[u]) if (v < w) {
+            if (!adj[v].count(w)) { ++center_wedges; ++endpoint_wedges; }
+        }
+        for (int v : adj[u]) {
+            for (int w : adj[v]) if (w != u && !adj[u].count(w)) ++endpoint_wedges;
+        }
+        gdd[u] = {triangles.per_vertex[u], center_wedges, endpoint_wedges};
     }
-    
     return gdd;
 }
 
@@ -466,7 +474,8 @@ double transitivity(const Graph& g) {
     
     if (triples == 0) return 0.0;
     
-    return 3.0 * tri_result.total_triangles / triples;
+    return 3.0 * static_cast<double>(tri_result.total_triangles) /
+           static_cast<double>(triples);
 }
 
 long long count_paths_of_length(const Graph& g, int u, int v, int k) {

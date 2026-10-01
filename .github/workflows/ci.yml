@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            compiler: gcc
+          - os: ubuntu-latest
+            compiler: clang
+          - os: macos-latest
+            compiler: appleclang
+          - os: windows-latest
+            compiler: msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Configure
+        shell: bash
+        run: >-
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+          -DGRAPHLIB_BUILD_EXAMPLES=OFF -DGRAPHLIB_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build --config Debug --parallel 2
+      - name: Test
+        run: ctest --test-dir build --build-config Debug --output-on-failure --timeout 60
+      - name: Verify test sources are tracked by the test target
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          cmake --build build --target graphlib_tests -- -n >/dev/null
+          missing=0
+          for source in tests/test_*.cpp; do
+            if ! grep -Fq "$source" build/build.ninja; then
+              echo "Not registered: $source"
+              missing=1
+            fi
+          done
+          test "$missing" -eq 0
+
+  sanitizers:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ASan-UBSan
+            flags: "-fsanitize=address,undefined -fno-omit-frame-pointer"
+          - name: TSan
+            flags: "-fsanitize=thread -fno-omit-frame-pointer"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          -DGRAPHLIB_BUILD_EXAMPLES=OFF -DGRAPHLIB_WARNINGS_AS_ERRORS=ON
+          -DCMAKE_CXX_FLAGS="${{ matrix.flags }}"
+          -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.flags }}"
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          TSAN_OPTIONS: halt_on_error=1
+        run: ctest --test-dir build --output-on-failure --timeout 60
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install coverage tooling
+        run: python3 -m pip install gcovr
+      - name: Configure
+        run: >-
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+          -DGRAPHLIB_BUILD_EXAMPLES=OFF -DCMAKE_CXX_FLAGS="--coverage"
+          -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+      - name: Build and test
+        run: |
+          cmake --build build --parallel 2
+          ctest --test-dir build --output-on-failure --timeout 60
+      - name: Generate coverage report
+        run: gcovr --root . --exclude 'build/_deps' --txt --xml-pretty -o coverage.xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml

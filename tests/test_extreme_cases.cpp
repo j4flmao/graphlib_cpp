@@ -106,7 +106,7 @@ TEST(ExtremeTest, MSTDisconnectedForest) {
 }
 
 TEST(ExtremeTest, ZeroNodesException) {
-    EXPECT_THROW(Graph(0), std::invalid_argument);
+    EXPECT_NO_THROW(Graph(0));
     EXPECT_THROW(ShortestPath(0), std::invalid_argument);
     EXPECT_THROW(MaxFlow(0), std::invalid_argument);
 }

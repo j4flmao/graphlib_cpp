@@ -28,8 +28,9 @@ double minimum_mean_cycle(const Graph& g, std::vector<int>* cycle) {
             Edge* e = g.get_edges(u);
             while (e) {
                 int v = e->to;
-                if (d[k-1][u] + e->weight < d[k][v]) {
-                    d[k][v] = d[k-1][u] + e->weight;
+                double candidate = d[k-1][u] + static_cast<double>(e->weight);
+                if (candidate < d[k][v]) {
+                    d[k][v] = candidate;
                     parent[k][v] = u;
                     changed = true;
                 }

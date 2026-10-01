@@ -1,0 +1,67 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 23, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "Development",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "GRAPHLIB_BUILD_TESTS": "ON",
+        "GRAPHLIB_BUILD_EXAMPLES": "OFF"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "GRAPHLIB_BUILD_TESTS": "OFF"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "Address and Undefined Sanitizers",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/asan",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined"
+      }
+    },
+    {
+      "name": "coverage",
+      "displayName": "Coverage",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/coverage",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "--coverage",
+        "CMAKE_EXE_LINKER_FLAGS": "--coverage"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev", "jobs": 2 },
+    { "name": "release", "configurePreset": "release", "jobs": 2 },
+    { "name": "asan", "configurePreset": "asan", "jobs": 2 },
+    { "name": "coverage", "configurePreset": "coverage", "jobs": 2 }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
+      "execution": { "timeout": 60 }
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan",
+      "output": { "outputOnFailure": true },
+      "execution": { "timeout": 60 }
+    }
+  ]
+}

@@ -11,8 +11,8 @@
 
 namespace graphlib {
 
-ShortestPath::Edge::Edge(int to, long long weight)
-    : to(to), weight(weight), enabled(true), next(nullptr) {
+ShortestPath::Edge::Edge(int to_vertex, long long edge_weight)
+    : to(to_vertex), weight(edge_weight), enabled(true), next(nullptr) {
 }
 
 ShortestPath::ShortestPath(int n)

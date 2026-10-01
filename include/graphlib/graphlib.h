@@ -49,6 +49,10 @@
 #include "graphlib/signed_graph.h"
 #include "graphlib/multigraph.h"
 #include "graphlib/parallel.h"
+#include "graphlib/contest_algorithms.h"
+#include "graphlib/combinatorial_algorithms.h"
+#include "graphlib/weighted_dsu_rollback.h"
+#include "graphlib/connectivity_extra.h"
 
 namespace graphlib {
 

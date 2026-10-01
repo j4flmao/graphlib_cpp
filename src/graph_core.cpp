@@ -11,8 +11,8 @@
 
 namespace graphlib {
 
-Edge::Edge(int to, long long weight)
-    : to(to), weight(weight), reverse_idx(-1), next(nullptr) {
+Edge::Edge(int to_vertex, long long edge_weight)
+    : to(to_vertex), weight(edge_weight), reverse_idx(-1), next(nullptr) {
 }
 
 Graph::Graph()
@@ -21,8 +21,8 @@ Graph::Graph()
 
 Graph::Graph(int n, bool directed)
     : n_(n), adj_(nullptr), directed_(directed) {
-    if (n <= 0) {
-        throw std::invalid_argument("Number of vertices must be positive");
+    if (n < 0) {
+        throw std::invalid_argument("Number of vertices must be non-negative");
     }
 
     adj_ = new Edge*[n];
@@ -34,6 +34,38 @@ Graph::Graph(int n, bool directed)
 Graph::~Graph() {
     clear_adj_list();
     delete[] adj_;
+}
+
+Graph::Graph(const Graph& other)
+    : n_(other.n_), adj_(new Edge*[other.n_]), directed_(other.directed_) {
+    for (int i = 0; i < n_; ++i) adj_[i] = nullptr;
+    try {
+        for (int i = 0; i < n_; ++i) {
+            Edge** tail = &adj_[i];
+            for (Edge* source = other.adj_[i]; source; source = source->next) {
+                *tail = new Edge(source->to, source->weight);
+                (*tail)->reverse_idx = source->reverse_idx;
+                tail = &(*tail)->next;
+            }
+        }
+    } catch (...) {
+        clear_adj_list();
+        delete[] adj_;
+        throw;
+    }
+}
+
+Graph& Graph::operator=(const Graph& other) {
+    if (this == &other) return *this;
+    Graph copy(other);
+    clear_adj_list();
+    delete[] adj_;
+    n_ = copy.n_;
+    adj_ = copy.adj_;
+    directed_ = copy.directed_;
+    copy.adj_ = nullptr;
+    copy.n_ = 0;
+    return *this;
 }
 
 Graph::Graph(Graph&& other) noexcept

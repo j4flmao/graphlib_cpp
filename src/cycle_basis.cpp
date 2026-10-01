@@ -81,7 +81,7 @@ namespace {
     }
     
     // XOR two edge sets
-    std::set<EdgeKey> xor_edge_sets(const std::set<EdgeKey>& a, const std::set<EdgeKey>& b) {
+    [[maybe_unused]] std::set<EdgeKey> xor_edge_sets(const std::set<EdgeKey>& a, const std::set<EdgeKey>& b) {
         std::set<EdgeKey> result;
         for (const auto& e : a) {
             if (b.find(e) == b.end()) result.insert(e);

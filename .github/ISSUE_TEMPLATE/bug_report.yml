@@ -1,0 +1,30 @@
+name: Bug report
+description: Report an incorrect result, crash, hang, or build failure.
+title: "[bug] "
+labels: [bug, triage]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Include code, graph data, compiler, and GraphLib version.
+      render: cpp
+    validations:
+      required: true
+  - type: input
+    id: seed
+    attributes:
+      label: Test seed
+      description: Value of GRAPHLIB_TEST_SEED, if applicable.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and diagnostics
+      render: text

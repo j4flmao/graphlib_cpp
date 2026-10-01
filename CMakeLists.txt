@@ -7,15 +7,23 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(BUILD_SHARED_LIBS "Build shared library (DLL/SO)" ON)
-option(BUILD_TESTS "Build test suite" ON)
-option(BUILD_EXAMPLES "Build examples" ON)
+option(BUILD_SHARED_LIBS "Build shared library (DLL/SO)" OFF)
+option(GRAPHLIB_BUILD_TESTS "Build test suite" "${PROJECT_IS_TOP_LEVEL}")
+option(GRAPHLIB_BUILD_EXAMPLES "Build examples" "${PROJECT_IS_TOP_LEVEL}")
+option(GRAPHLIB_BUILD_TOOLS "Build developer tools" OFF)
+option(GRAPHLIB_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+
+# Keep the old option names as compatibility aliases for existing consumers.
+if(DEFINED BUILD_TESTS)
+    set(GRAPHLIB_BUILD_TESTS "${BUILD_TESTS}")
+endif()
+if(DEFINED BUILD_EXAMPLES)
+    set(GRAPHLIB_BUILD_EXAMPLES "${BUILD_EXAMPLES}")
+endif()
 
 if(MSVC)
     add_compile_options(/wd4251)
 endif()
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(GRAPHLIB_SOURCES
     src/graph_core.cpp
@@ -67,6 +75,10 @@ set(GRAPHLIB_SOURCES
     src/two_sat.cpp
     src/clique.cpp
     src/coloring.cpp
+    src/contest_algorithms.cpp
+    src/combinatorial_algorithms.cpp
+    src/weighted_dsu_rollback.cpp
+    src/connectivity_extra.cpp
 )
 
 set(GRAPHLIB_HEADERS
@@ -118,9 +130,14 @@ set(GRAPHLIB_HEADERS
     include/graphlib/two_sat.h
     include/graphlib/clique.h
     include/graphlib/coloring.h
+    include/graphlib/contest_algorithms.h
+    include/graphlib/combinatorial_algorithms.h
+    include/graphlib/weighted_dsu_rollback.h
+    include/graphlib/connectivity_extra.h
 )
 
 add_library(graphlib ${GRAPHLIB_SOURCES})
+add_library(GraphLib::graphlib ALIAS graphlib)
 
 set_target_properties(graphlib PROPERTIES
     VERSION ${PROJECT_VERSION}
@@ -129,6 +146,10 @@ set_target_properties(graphlib PROPERTIES
 )
 
 target_compile_definitions(graphlib PRIVATE GRAPHLIB_VERSION_STRING="${PROJECT_VERSION}")
+target_include_directories(graphlib PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 
 if(WIN32)
     target_compile_definitions(graphlib PRIVATE GRAPHLIB_EXPORTS)
@@ -137,9 +158,16 @@ endif()
 
 if(MSVC)
     add_compile_options(/utf-8)
-    target_compile_options(graphlib PRIVATE /W4)
+    target_compile_options(graphlib PRIVATE /W4 /permissive-)
 else()
-    target_compile_options(graphlib PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(graphlib PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+endif()
+if(GRAPHLIB_WARNINGS_AS_ERRORS)
+    if(MSVC)
+        target_compile_options(graphlib PRIVATE /WX)
+    else()
+        target_compile_options(graphlib PRIVATE -Werror)
+    endif()
 endif()
 
 include(GNUInstallDirs)
@@ -179,14 +207,14 @@ install(FILES
     DESTINATION "${GRAPHLIB_INSTALL_CMAKEDIR}"
 )
 
-if(BUILD_TESTS)
+if(GRAPHLIB_BUILD_TESTS)
     enable_testing()
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/CMakeLists.txt")
         add_subdirectory(tests)
     endif()
 endif()
 
-if(BUILD_EXAMPLES)
+if(GRAPHLIB_BUILD_EXAMPLES)
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/examples/CMakeLists.txt")
         add_subdirectory(examples)
     endif()
@@ -196,7 +224,7 @@ set(CPACK_PACKAGE_NAME "GraphLib")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "C++ Graph Algorithms Library")
 set(CPACK_PACKAGE_VENDOR "GraphLib")
-set(CPACK_PACKAGE_CONTACT "Your Name <your.email@example.com>")
+set(CPACK_PACKAGE_CONTACT "GraphLib maintainers")
 set(CPACK_GENERATOR "ZIP;TGZ")
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}")
 

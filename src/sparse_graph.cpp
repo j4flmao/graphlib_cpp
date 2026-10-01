@@ -337,7 +337,7 @@ void COOGraph::sort() {
     std::vector<int> new_row(m_), new_col(m_);
     std::vector<long long> new_data(m_);
     
-    for (size_t i = 0; i < m_; ++i) {
+    for (int i = 0; i < m_; ++i) {
         new_row[i] = row_[indices[i]];
         new_col[i] = col_[indices[i]];
         new_data[i] = data_[indices[i]];
@@ -354,7 +354,7 @@ void COOGraph::remove_duplicates() {
     std::vector<int> new_row, new_col;
     std::vector<long long> new_data;
     
-    for (size_t i = 0; i < m_; ++i) {
+    for (int i = 0; i < m_; ++i) {
         if (new_row.empty() || new_row.back() != row_[i] || new_col.back() != col_[i]) {
             new_row.push_back(row_[i]);
             new_col.push_back(col_[i]);
@@ -375,7 +375,7 @@ CSRGraph COOGraph::to_csr() const {
     std::vector<std::tuple<int, int, long long>> edges;
     edges.reserve(m_);
     
-    for (size_t i = 0; i < m_; ++i) {
+    for (int i = 0; i < m_; ++i) {
         edges.emplace_back(row_[i], col_[i], data_[i]);
     }
     
@@ -386,7 +386,7 @@ CSCGraph COOGraph::to_csc() const {
     std::vector<std::tuple<int, int, long long>> edges;
     edges.reserve(m_);
     
-    for (size_t i = 0; i < m_; ++i) {
+    for (int i = 0; i < m_; ++i) {
         edges.emplace_back(row_[i], col_[i], data_[i]);
     }
     
@@ -396,7 +396,7 @@ CSCGraph COOGraph::to_csc() const {
 Graph COOGraph::to_graph() const {
     Graph g(n_, directed_);
     
-    for (size_t i = 0; i < m_; ++i) {
+    for (int i = 0; i < m_; ++i) {
         g.add_edge(row_[i], col_[i], data_[i]);
     }
     

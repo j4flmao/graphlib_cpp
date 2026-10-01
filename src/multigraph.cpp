@@ -9,8 +9,8 @@ namespace graphlib {
 
 // ============== Multigraph Implementation ==============
 
-Multigraph::MultiEdge::MultiEdge(int id, int from, int to, long long weight)
-    : id(id), from(from), to(to), weight(weight) {}
+Multigraph::MultiEdge::MultiEdge(int edge_id, int source, int target, long long edge_weight)
+    : id(edge_id), from(source), to(target), weight(edge_weight) {}
 
 Multigraph::Multigraph(int n, bool directed) 
     : n_(n), next_edge_id_(0), directed_(directed), adj_(n) {}

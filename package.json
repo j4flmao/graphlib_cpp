@@ -1,0 +1,20 @@
+{
+  "name": "graphlib-cpp-development-tools",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Development tooling for GraphLib C++",
+  "scripts": {
+    "prepare": "husky",
+    "lint:staged": "lint-staged",
+    "commitlint": "commitlint --from=HEAD~1 --to=HEAD --verbose"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

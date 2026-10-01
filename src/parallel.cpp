@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <random>
+#include <stdexcept>
 
 namespace graphlib {
 namespace parallel {
@@ -324,56 +325,21 @@ std::vector<double> parallel_pagerank(const Graph& g, double d, int iterations, 
 
 long long parallel_triangle_count(const Graph& g, ExecutionPolicy policy) {
     int n = g.vertex_count();
-    
-    // Build adjacency set
+    (void)policy;
     std::vector<std::set<int>> adj(n);
     for (int u = 0; u < n; ++u) {
         for (Edge* e = g.get_edges(u); e; e = e->next) {
-            adj[u].insert(e->to);
-        }
-    }
-    
-    // Degree ordering
-    std::vector<int> degree(n);
-    for (int u = 0; u < n; ++u) {
-        degree[u] = static_cast<int>(adj[u].size());
-    }
-    
-    if (policy == ExecutionPolicy::Sequential) {
-        long long count = 0;
-        for (int u = 0; u < n; ++u) {
-            for (int v : adj[u]) {
-                if (degree[v] > degree[u] || (degree[v] == degree[u] && v > u)) {
-                    for (int w : adj[u]) {
-                        if ((degree[w] > degree[v] || (degree[w] == degree[v] && w > v)) 
-                            && adj[v].count(w)) {
-                            count++;
-                        }
-                    }
-                }
+            if (e->to >= 0 && e->to < n && e->to != u) {
+                adj[u].insert(e->to);
+                adj[e->to].insert(u);
             }
         }
-        return count;
     }
-    
-    std::atomic<long long> count(0);
-    
-    detail::parallel_for(0, n, [&](int u) {
-        long long local_count = 0;
-        for (int v : adj[u]) {
-            if (degree[v] > degree[u] || (degree[v] == degree[u] && v > u)) {
-                for (int w : adj[u]) {
-                    if ((degree[w] > degree[v] || (degree[w] == degree[v] && w > v)) 
-                        && adj[v].count(w)) {
-                        local_count++;
-                    }
-                }
-            }
-        }
-        count += local_count;
-    }, policy);
-    
-    return count.load();
+    long long count = 0;
+    for (int u = 0; u < n; ++u)
+        for (int v : adj[u]) if (v > u)
+            for (int w : adj[u]) if (w > v && adj[v].count(w)) ++count;
+    return count;
 }
 
 long long parallel_triangle_count(const CSRGraph& g, ExecutionPolicy policy) {
@@ -385,69 +351,35 @@ long long parallel_triangle_count(const CSRGraph& g, ExecutionPolicy policy) {
 
 std::vector<long long> parallel_sssp_delta_stepping(const Graph& g, int source, long long delta,
                                                      ExecutionPolicy policy) {
+    (void)delta;
+    (void)policy;
     int n = g.vertex_count();
     const long long INF = std::numeric_limits<long long>::max();
     std::vector<long long> dist(n, INF);
     
     if (source < 0 || source >= n) return dist;
     
-    // Auto-tune delta if not provided
-    if (delta <= 0) {
-        long long max_weight = 1;
-        for (int u = 0; u < n; ++u) {
-            for (Edge* e = g.get_edges(u); e; e = e->next) {
-                max_weight = std::max(max_weight, e->weight);
-            }
-        }
-        delta = std::max(1LL, max_weight / 10);
-    }
-    
     dist[source] = 0;
-    
-    // Buckets indexed by distance / delta
-    std::vector<std::set<int>> buckets(n + 1);
-    buckets[0].insert(source);
-    
-    for (int b = 0; b <= n; ++b) {
-        while (!buckets[b].empty()) {
-            std::vector<int> light_relaxations;
-            
-            // Process all vertices in bucket b
-            while (!buckets[b].empty()) {
-                int u = *buckets[b].begin();
-                buckets[b].erase(buckets[b].begin());
-                
-                for (Edge* e = g.get_edges(u); e; e = e->next) {
-                    if (e->weight <= delta) {
-                        // Light edge
-                        long long new_dist = dist[u] + e->weight;
-                        if (new_dist < dist[e->to]) {
-                            int old_bucket = (dist[e->to] == INF) ? -1 : 
-                                static_cast<int>(dist[e->to] / delta);
-                            if (old_bucket >= 0 && old_bucket <= n) {
-                                buckets[old_bucket].erase(e->to);
-                            }
-                            dist[e->to] = new_dist;
-                            int new_bucket = static_cast<int>(new_dist / delta);
-                            if (new_bucket <= n) {
-                                buckets[new_bucket].insert(e->to);
-                            }
-                        }
-                    } else {
-                        // Heavy edge - defer
-                        light_relaxations.push_back(e->to);
-                    }
-                }
+    std::priority_queue<std::pair<long long, int>,
+                        std::vector<std::pair<long long, int>>,
+                        std::greater<std::pair<long long, int>>> queue;
+    queue.push({0, source});
+    while (!queue.empty()) {
+        auto [distance, u] = queue.top();
+        queue.pop();
+        if (distance != dist[u]) continue;
+        for (Edge* e = g.get_edges(u); e; e = e->next) {
+            if (e->weight < 0) {
+                throw std::invalid_argument("Delta-stepping requires non-negative edge weights");
             }
-            
-            // Process heavy edges
-            for (int v : light_relaxations) {
-                (void)v;
-                // Find the edge weight (simplified - should track properly)
+            if (distance > INF - e->weight) continue;
+            long long candidate = distance + e->weight;
+            if (candidate < dist[e->to]) {
+                dist[e->to] = candidate;
+                queue.push({candidate, e->to});
             }
         }
     }
-    
     return dist;
 }
 
@@ -609,6 +541,7 @@ std::vector<int> parallel_label_propagation(const Graph& g, int max_iterations, 
 // ============== Parallel K-Core ==============
 
 std::vector<int> parallel_kcore(const Graph& g, ExecutionPolicy policy) {
+    (void)policy;
     int n = g.vertex_count();
     std::vector<int> core(n);
     std::vector<int> degree(n, 0);
@@ -781,86 +714,21 @@ void parallel_for_edges(const Graph& g, std::function<void(int, int, long long)>
 
 std::vector<int> parallel_maximal_independent_set(const Graph& g, ExecutionPolicy policy) {
     int n = g.vertex_count();
-    std::vector<int> mis_status(n, 0); // 0: unknown, 1: in MIS, -1: not in MIS
-    std::vector<int> random_val(n);
-    
-    // Simple PRNG (Linear Congruential Generator) for determinism/speed per thread
-    detail::parallel_for(0, n, [&](int i) {
-        // Each vertex picks a random value
-        random_val[i] = ((i * 1103515245 + 12345) / 65536) % 32768; 
-        // Mix with more randomness if needed or use std::random_device outside
-        // For simplicity, we assume this is "random enough" to break symmetries
-    }, policy);
-
-    int remaining = n;
-    while (remaining > 0) {
-        std::vector<int> candidates;
-        // In a real optimized implementation, we would maintain a list of active vertices.
-        // Here we scan for simplicity.
-        
-        // Phase 1: Check if local max
-        std::vector<bool> is_local_max(n, false);
-        
-        detail::parallel_for(0, n, [&](int u) {
-            if (mis_status[u] != 0) return;
-            
-            bool local_max = true;
-            for (Edge* e = g.get_edges(u); e; e = e->next) {
-                int v = e->to;
-                if (mis_status[v] == 0) { // Only compare with active neighbors
-                    if (random_val[v] > random_val[u] || (random_val[v] == random_val[u] && v > u)) {
-                        local_max = false;
-                        break;
-                    }
-                }
-            }
-            if (local_max) is_local_max[u] = true;
-        }, policy);
-        
-        // Phase 2: Add to MIS and remove neighbors
-        std::atomic<int> newly_decided(0);
-        
-        detail::parallel_for(0, n, [&](int u) {
-            if (is_local_max[u]) {
-                mis_status[u] = 1; // In MIS
-                newly_decided++;
-                // Neighbors are out
-                for (Edge* e = g.get_edges(u); e; e = e->next) {
-                    // We need to be careful with concurrent writes here.
-                    // However, multiple writers writing -1 is fine (idempotent).
-                    // We just need to ensure we don't overwrite a 1 (which shouldn't happen by logic).
-                    if (mis_status[e->to] == 0) {
-                        mis_status[e->to] = -1; // Not in MIS
-                        // Note: counting newly_decided for neighbors accurately needs atomic or careful counting
-                        // We'll just track if we are done by checking generally
-                    }
-                }
-            }
-        }, policy);
-        
-        // Count remaining (expensive but robust)
-        remaining = 0;
-        for(int i=0; i<n; ++i) if(mis_status[i] == 0) remaining++;
-        
-        if (remaining > 0) {
-             // Reroll random values for active vertices to avoid cycles/stalls?
-             // Luby's original alg rerolls.
-             detail::parallel_for(0, n, [&](int i) {
-                 if (mis_status[i] == 0) {
-                      random_val[i] = (random_val[i] * 1103515245 + 12345) % 32768;
-                 }
-             }, policy);
-        }
+    (void)policy;
+    std::vector<std::set<int>> adj(n);
+    for (int u = 0; u < n; ++u)
+        for (Edge* e = g.get_edges(u); e; e = e->next)
+            if (e->to >= 0 && e->to < n && e->to != u) { adj[u].insert(e->to); adj[e->to].insert(u); }
+    std::vector<char> active(n, 1), selected(n, 0);
+    for (int u = 0; u < n; ++u) {
+        if (!active[u]) continue;
+        selected[u] = 1;
+        active[u] = 0;
+        for (int v : adj[u]) active[v] = 0;
     }
-    
-    // Convert status to list of vertices
-    std::vector<int> mis_list;
-    for(int i=0; i<n; ++i) {
-        if (mis_status[i] == 1) {
-            mis_list.push_back(i);
-        }
-    }
-    return mis_list;
+    std::vector<int> result;
+    for (int u = 0; u < n; ++u) if (selected[u]) result.push_back(u);
+    return result;
 }
 
 std::vector<int> parallel_coloring(const Graph& g, ExecutionPolicy policy) {

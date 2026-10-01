@@ -97,10 +97,6 @@ GRAPHLIB_API std::pair<long long, std::vector<int>> tsp_simulated_annealing(cons
             // For simplicity, just reverse and recalculate full cost for now (safe but slower)
             // Or use delta.
             
-            int prev_u = current_tour[u-1];
-            int curr_u = current_tour[u];
-            int curr_v = current_tour[v];
-            int next_v = current_tour[(v + 1) % n];
 
 
             
@@ -180,7 +176,7 @@ GRAPHLIB_API std::pair<long long, std::vector<int>> tsp_ant_colony(const Graph& 
                 for (int next = 0; next < n; ++next) {
                     if (!visited[next]) {
                         double tau = pheromone[curr][next];
-                        double eta = 1.0 / (double)(dist[curr][next] + 1e-9); // Heuristic
+                        double eta = 1.0 / (static_cast<double>(dist[curr][next]) + 1e-9); // Heuristic
                         double p = std::pow(tau, config.alpha) * std::pow(eta, config.beta);
                         probs.push_back(p);
                         candidates.push_back(next);
@@ -219,7 +215,7 @@ GRAPHLIB_API std::pair<long long, std::vector<int>> tsp_ant_colony(const Graph& 
 
         // Deposit
         for (int k = 0; k < config.num_ants; ++k) {
-            if (ant_tours[k].size() != n) continue;
+            if (ant_tours[k].size() != static_cast<std::size_t>(n)) continue;
             
             double delta = config.Q / (double)ant_costs[k];
             for (size_t i = 0; i < ant_tours[k].size(); ++i) {

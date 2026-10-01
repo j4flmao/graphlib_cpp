@@ -31,8 +31,8 @@ public:
     explicit Graph(int n, bool directed = true);
     virtual ~Graph();
 
-    Graph(const Graph&) = delete;
-    Graph& operator=(const Graph&) = delete;
+    Graph(const Graph& other);
+    Graph& operator=(const Graph& other);
     Graph(Graph&& other) noexcept;
     Graph& operator=(Graph&& other) noexcept;
 

@@ -8,8 +8,8 @@
 
 namespace graphlib {
 
-SignedGraph::SignedEdge::SignedEdge(int to, int sign, long long weight)
-    : to(to), sign(sign), weight(weight), next(nullptr) {}
+SignedGraph::SignedEdge::SignedEdge(int to_vertex, int edge_sign, long long edge_weight)
+    : to(to_vertex), sign(edge_sign), weight(edge_weight), next(nullptr) {}
 
 SignedGraph::SignedGraph(int n, bool directed) 
     : n_(n), directed_(directed) {
@@ -387,7 +387,6 @@ std::vector<double> SignedGraph::signed_pagerank(double d, int iterations) const
 
 std::vector<int> SignedGraph::polarized_communities() const {
     std::vector<int> community(n_, -1);
-    int num_communities = 0;
     
     // Use balance partition as initial communities
     find_balance_partition(community);

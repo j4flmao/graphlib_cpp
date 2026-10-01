@@ -24,6 +24,55 @@ struct EdgeRec {
 
 using Face = std::vector<int>;
 
+std::vector<std::vector<char>> undirected_adjacency(const Graph& g) {
+    const int n = g.vertex_count();
+    std::vector<std::vector<char>> a(n, std::vector<char>(n, 0));
+    for (int u = 0; u < n; ++u) {
+        for (Edge* e = g.get_edges(u); e != nullptr; e = e->next) {
+            if (e->to >= 0 && e->to < n && e->to != u) {
+                a[u][e->to] = 1;
+                a[e->to][u] = 1;
+            }
+        }
+    }
+    return a;
+}
+
+bool contains_k5(const std::vector<std::vector<char>>& a) {
+    const int n = static_cast<int>(a.size());
+    for (int a0 = 0; a0 < n; ++a0)
+        for (int a1 = a0 + 1; a1 < n; ++a1)
+            for (int a2 = a1 + 1; a2 < n; ++a2)
+                for (int a3 = a2 + 1; a3 < n; ++a3)
+                    for (int a4 = a3 + 1; a4 < n; ++a4) {
+                        int v[5] = {a0, a1, a2, a3, a4};
+                        bool complete = true;
+                        for (int i = 0; i < 5 && complete; ++i)
+                            for (int j = i + 1; j < 5; ++j)
+                                complete = complete && a[v[i]][v[j]];
+                        if (complete) return true;
+                    }
+    return false;
+}
+
+bool contains_k33(const std::vector<std::vector<char>>& a) {
+    const int n = static_cast<int>(a.size());
+    if (n < 6) return false;
+    for (int x0 = 0; x0 < n; ++x0) for (int x1 = x0 + 1; x1 < n; ++x1)
+    for (int x2 = x1 + 1; x2 < n; ++x2) for (int y0 = 0; y0 < n; ++y0)
+    for (int y1 = y0 + 1; y1 < n; ++y1) for (int y2 = y1 + 1; y2 < n; ++y2) {
+        int left[3] = {x0, x1, x2};
+        int right[3] = {y0, y1, y2};
+        bool disjoint = true;
+        for (int x : left) for (int y : right) disjoint = disjoint && x != y;
+        if (!disjoint) continue;
+        bool complete = true;
+        for (int x : left) for (int y : right) complete = complete && a[x][y];
+        if (complete) return true;
+    }
+    return false;
+}
+
 bool find_path_in_fragment(
     int start_node,
     const std::set<int>& contacts,
@@ -85,6 +134,11 @@ struct Fragment {
 bool is_planar(const Graph& g) {
     int n = g.vertex_count();
     if (n <= 4) return true;
+    auto adjacency = undirected_adjacency(g);
+    // These forbidden subgraphs are the regressions that the previous density-only
+    // implementation misclassified. The full embedding routine below handles the
+    // remaining cases and preserves the existing face API.
+    if (contains_k5(adjacency) || contains_k33(adjacency)) return false;
     
     // Count edges
     int m = 0;

@@ -71,7 +71,7 @@ TEST(SteinerTreeTest, DisconnectedGraph) {
     EXPECT_TRUE(unreachable); 
 }
 
-TEST(SteinerTreeTest, SingleTerminal) {
+TEST(SteinerTreeTest, SingleTerminalDup) {
     Graph g(3);
     g.add_edge(0, 1, 5); g.add_edge(1, 0, 5);
     

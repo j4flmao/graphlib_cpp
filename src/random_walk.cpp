@@ -35,7 +35,7 @@ namespace {
         return neighbors[dist(rng)].first;
     }
     
-    int weighted_random_neighbor(const Graph& g, int v, std::mt19937& rng) {
+    [[maybe_unused]] int weighted_random_neighbor(const Graph& g, int v, std::mt19937& rng) {
         auto neighbors = get_neighbors(g, v);
         if (neighbors.empty()) return -1;
         
@@ -306,7 +306,7 @@ std::vector<double> stationary_distribution(const Graph& g, int iterations) {
         }
         
         for (int u = 0; u < n; ++u) {
-            pi[u] /= total_degree;
+            pi[u] /= static_cast<double>(total_degree);
         }
         
         return pi;

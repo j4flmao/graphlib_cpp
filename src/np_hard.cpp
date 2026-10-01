@@ -534,7 +534,7 @@ std::pair<long long, std::vector<int>> tsp_metric_approx(const Graph& g) {
         }
     }
     
-    if (path.size() != n) {
+    if (path.size() != static_cast<std::size_t>(n)) {
         return {-1, {}};
     }
     
@@ -774,9 +774,9 @@ std::pair<long long, std::vector<int>> tsp_christofides(const Graph& g) {
     }
     
     // Calculate cost
-    if (tsp_path.size() != n) return {-1, {}};
+    if (tsp_path.size() != static_cast<std::size_t>(n)) return {-1, {}};
     
-    for (size_t i = 0; i < n; ++i) {
+    for (std::size_t i = 0; i < static_cast<std::size_t>(n); ++i) {
         int u = tsp_path[i];
         int v = tsp_path[(i + 1) % n];
         

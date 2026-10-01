@@ -1,0 +1,28 @@
+algorithm:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/*mst*'
+          - 'src/*path*'
+          - 'src/*matching*'
+          - 'src/*flow*'
+          - 'src/*algorithm*'
+          - 'include/graphlib/*'
+tests:
+  - changed-files:
+      - any-glob-to-any-file: 'tests/**'
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/labeler.yml'
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docs/**'
+          - '*.md'
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'vcpkg.json'
+          - 'CMakeLists.txt'
+          - '.github/dependabot.yml'

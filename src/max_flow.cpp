@@ -9,14 +9,26 @@
 
 namespace graphlib {
 
+namespace {
+void validate_terminals(int n, int source, int sink) {
+    if (source < 0 || source >= n || sink < 0 || sink >= n) {
+        throw std::invalid_argument("Source and sink must be valid vertex indices");
+    }
+    if (source == sink) {
+        throw std::invalid_argument("Source and sink must be different");
+    }
+}
+}
+
 // ==========================================
 // MaxFlow Implementation (Dinic)
 // ==========================================
 
-MaxFlow::Edge::Edge(int to, long long cap, long long cost)
-    : to(to), cap(cap), cost(cost), rev(nullptr), next(nullptr) {}
+MaxFlow::Edge::Edge(int to_vertex, long long capacity, long long edge_cost)
+    : to(to_vertex), cap(capacity), cost(edge_cost), rev(nullptr), next(nullptr) {}
 
 MaxFlow::MaxFlow(int n) : n_(n) {
+    if (n < 0) throw std::invalid_argument("Number of vertices must be non-negative");
     graph_ = new Edge*[n];
     for(int i=0; i<n; ++i) graph_[i] = nullptr;
     level_ = new int[n];
@@ -77,6 +89,12 @@ void MaxFlow::add_edge(int from, int to, long long capacity) {
 }
 
 void MaxFlow::add_edge(int from, int to, long long capacity, long long cost) {
+    if (from < 0 || from >= n_ || to < 0 || to >= n_) {
+        throw std::out_of_range("Edge endpoint out of range");
+    }
+    if (capacity < 0) {
+        throw std::invalid_argument("Edge capacity must be non-negative");
+    }
     Edge* fwd = new Edge(to, capacity, cost);
     Edge* bwd = new Edge(from, 0, -cost);
     fwd->rev = bwd;
@@ -94,6 +112,12 @@ void MaxFlow::add_undirected_edge(int u, int v, long long capacity) {
 }
 
 void MaxFlow::add_undirected_edge(int u, int v, long long capacity, long long cost) {
+    if (u < 0 || u >= n_ || v < 0 || v >= n_) {
+        throw std::out_of_range("Edge endpoint out of range");
+    }
+    if (capacity < 0) {
+        throw std::invalid_argument("Edge capacity must be non-negative");
+    }
     Edge* fwd = new Edge(v, capacity, cost);
     Edge* bwd = new Edge(u, capacity, cost); // Undirected means capacity both ways? Usually.
     // But for undirected max flow, we usually add two directed edges.
@@ -131,6 +155,7 @@ bool MaxFlow::bfs(int source, int sink) {
 }
 
 long long MaxFlow::edmonds_karp(int source, int sink) {
+    validate_terminals(n_, source, sink);
     long long flow = 0;
     std::vector<int> parent(n_);
     std::vector<Edge*> pred_edge(n_);
@@ -173,6 +198,7 @@ long long MaxFlow::edmonds_karp(int source, int sink) {
 }
 
 long long MaxFlow::push_relabel(int source, int sink) {
+    validate_terminals(n_, source, sink);
     std::vector<long long> excess(n_, 0);
     std::vector<int> height(n_, 0);
     std::vector<int> count(2 * n_ + 1, 0); // Optimization: gap heuristic could be used, but keeping simple for now
@@ -252,6 +278,7 @@ long long MaxFlow::dfs(int v, int sink, long long f) {
 }
 
 long long MaxFlow::dinic(int source, int sink) {
+    validate_terminals(n_, source, sink);
     long long flow = 0;
     while (bfs(source, sink)) {
         for (int i = 0; i < n_; ++i) iter_[i] = graph_[i];
@@ -263,6 +290,9 @@ long long MaxFlow::dinic(int source, int sink) {
 }
 
 void MaxFlow::min_cut_reachable_from_source(int source, std::vector<char>& reachable) const {
+    if (source < 0 || source >= n_) {
+        throw std::out_of_range("Source vertex out of range");
+    }
     reachable.assign(n_, 0);
     std::queue<int> q;
     q.push(source);
@@ -286,6 +316,7 @@ void MaxFlow::min_cut_reachable_from_source(int source, std::vector<char>& reach
 // ==========================================
 
 std::pair<long long, long long> MaxFlow::min_cost_max_flow(int source, int sink) {
+    validate_terminals(n_, source, sink);
     long long total_flow = 0;
     long long total_cost = 0;
     
@@ -325,22 +356,16 @@ std::pair<long long, long long> MaxFlow::min_cost_max_flow(int source, int sink)
             in_queue[u] = false;
             
             // Safety check for negative cycles
-            if (count[u] >= n_) {
-                // Negative cycle detected. 
-                // In standard MCMF, this implies unbounded solution or undefined behavior.
-                // We stop SPFA and proceed, hoping Dijkstra handles the rest (or just return).
-                // For robustness, we can just break.
-                break; 
-            }
-            
             for (Edge* e = graph_[u]; e != nullptr; e = e->next) {
                 if (e->cap > 0 && h[u] != std::numeric_limits<long long>::max()) {
                      if (h[e->to] > h[u] + e->cost) {
                         h[e->to] = h[u] + e->cost;
                         if (!in_queue[e->to]) {
+                            if (++count[e->to] >= n_) {
+                                throw std::runtime_error("Reachable negative-cost cycle in min-cost flow");
+                            }
                             q.push(e->to);
                             in_queue[e->to] = true;
-                            count[e->to]++;
                         }
                     }
                 }

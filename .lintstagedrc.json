@@ -1,0 +1,4 @@
+{
+  "*.{cpp,h,hpp,ipp}": "git diff --check --",
+  "*.{md,yml,yaml,json,cjs}": "git diff --check --"
+}

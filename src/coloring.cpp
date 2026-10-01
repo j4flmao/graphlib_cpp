@@ -73,7 +73,6 @@ std::vector<int> greedy_coloring(const Graph& g) {
             int v = e->to;
             if (colors[v] == -1) {
                 // Check if color c is already known to v
-                bool known = false;
                 // We'd strictly need to store sets of neighbor colors.
                 // Recomputing saturation is O(deg).
                 // Or simplified DSATUR: Update neighbor sets.

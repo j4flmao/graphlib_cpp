@@ -331,7 +331,6 @@ Graph rmat_graph(int n, int m, double a, double b, double c, double d, int seed)
         int v = 0;
         int step = N / 2;
         
-        int curr_n = N;
 
         while (step >= 1) {
             double r = dist(rng);

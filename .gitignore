@@ -1,5 +1,6 @@
 # Build directories
 build/
+node_modules/
 build-*/
 out/
 bin/

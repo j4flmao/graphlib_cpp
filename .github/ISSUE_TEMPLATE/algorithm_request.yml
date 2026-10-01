@@ -1,0 +1,17 @@
+name: Algorithm request
+description: Request an algorithm from the GraphLib roadmap.
+title: "[algorithm] "
+labels: [algorithm, roadmap]
+body:
+  - type: input
+    id: roadmap_id
+    attributes:
+      label: Roadmap ID
+      description: For example ALG-48 or UPG-20.
+  - type: textarea
+    id: contract
+    attributes:
+      label: Required contract
+      description: Inputs, outputs, directedness, weights, complexity, and certificate.
+    validations:
+      required: true
