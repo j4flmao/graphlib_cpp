@@ -152,8 +152,12 @@ target_include_directories(graphlib PUBLIC
 )
 
 if(WIN32)
-    target_compile_definitions(graphlib PRIVATE GRAPHLIB_EXPORTS)
-    target_compile_definitions(graphlib INTERFACE GRAPHLIB_IMPORTS)
+    if(BUILD_SHARED_LIBS)
+        target_compile_definitions(graphlib PRIVATE GRAPHLIB_EXPORTS)
+        target_compile_definitions(graphlib INTERFACE GRAPHLIB_IMPORTS)
+    else()
+        target_compile_definitions(graphlib PUBLIC GRAPHLIB_STATIC)
+    endif()
 endif()
 
 if(MSVC)

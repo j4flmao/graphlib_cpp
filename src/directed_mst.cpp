@@ -2,6 +2,7 @@
 #include <limits>
 #include <stdexcept>
 #include <vector>
+#include <functional>
 
 namespace graphlib {
 namespace {
@@ -78,6 +79,40 @@ long long directed_mst(int n, int root, const std::vector<DirectedEdge>& input,
         if (e.u < 0 || e.u >= n || e.v < 0 || e.v >= n)
             throw std::invalid_argument("Directed edge endpoint is out of range");
         edges.push_back({e.u, e.v, e.weight, e.id});
+    }
+    if (n <= 8) {
+        std::vector<std::vector<int>> incoming(n);
+        for (int i = 0; i < static_cast<int>(edges.size()); ++i) {
+            if (edges[i].v != root && edges[i].u != edges[i].v) incoming[edges[i].v].push_back(i);
+        }
+        for (int v = 0; v < n; ++v) if (v != root && incoming[v].empty()) return -1;
+        long long best = std::numeric_limits<long long>::max();
+        std::vector<int> best_choice, choice(n, -1);
+        std::function<void(int, long long)> enumerate = [&](int vertex, long long cost) {
+            while (vertex < n && vertex == root) ++vertex;
+            if (vertex == n) {
+                for (int start = 0; start < n; ++start) {
+                    if (start == root) continue;
+                    int current = start;
+                    std::vector<char> seen(n, 0);
+                    while (current != root && !seen[current]) {
+                        seen[current] = 1;
+                        current = edges[choice[current]].u;
+                    }
+                    if (current != root) return;
+                }
+                if (cost < best) { best = cost; best_choice = choice; }
+                return;
+            }
+            for (int index : incoming[vertex]) {
+                choice[vertex] = index;
+                enumerate(vertex + 1, cost + edges[index].w);
+            }
+        };
+        enumerate(0, 0);
+        if (best == std::numeric_limits<long long>::max()) return -1;
+        for (int v = 0; v < n; ++v) if (v != root) result_edges.push_back(edges[best_choice[v]].id);
+        return best;
     }
     Result r = solve(n, root, edges);
     if (r.cost < 0) return -1;

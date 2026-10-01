@@ -14,6 +14,7 @@
 #include "graphlib/mst.h"
 #include "graphlib/connectivity.h"
 #include "graphlib/scc.h"
+#include "graphlib/two_sat.h"
 #include "graphlib/general_matching.h"
 #include "graphlib/splay_tree.h"
 #include "graphlib/tree.h"

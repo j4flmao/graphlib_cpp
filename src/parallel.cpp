@@ -265,7 +265,7 @@ std::vector<double> parallel_pagerank(const Graph& g, double d, int iterations, 
     std::vector<double> new_pr(n);
     
     std::vector<int> out_degree(n, 0);
-    for (int u = 0; u < n; ++u) {
+    for (int u = n - 1; u >= 0; --u) {
         for (Edge* e = g.get_edges(u); e; e = e->next) {
             out_degree[u]++;
         }
@@ -718,9 +718,12 @@ std::vector<int> parallel_maximal_independent_set(const Graph& g, ExecutionPolic
     std::vector<std::set<int>> adj(n);
     for (int u = 0; u < n; ++u)
         for (Edge* e = g.get_edges(u); e; e = e->next)
-            if (e->to >= 0 && e->to < n && e->to != u) { adj[u].insert(e->to); adj[e->to].insert(u); }
+            if (e->to >= 0 && e->to < n && e->to != u) {
+                adj[u].insert(e->to);
+                adj[e->to].insert(u);
+            }
     std::vector<char> active(n, 1), selected(n, 0);
-    for (int u = 0; u < n; ++u) {
+    for (int u = n - 1; u >= 0; --u) {
         if (!active[u]) continue;
         selected[u] = 1;
         active[u] = 0;

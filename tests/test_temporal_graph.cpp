@@ -6,6 +6,14 @@
 
 using namespace graphlib;
 
+static std::vector<Edge> edge_values(const Graph& graph, int vertex) {
+    std::vector<Edge> result;
+    for (Edge* edge = graph.get_edges(vertex); edge; edge = edge->next) {
+        result.push_back(*edge);
+    }
+    return result;
+}
+
 // =============================================================================
 // Construction and Basic Accessors
 // =============================================================================
@@ -146,9 +154,9 @@ TEST(TemporalGraphTest, SnapshotAtInstantaneous) {
     Graph snap = g.snapshot_at(100);
     EXPECT_EQ(snap.vertex_count(), 4);
     
-    auto edges_0 = snap.get_edges(0);
-    auto edges_1 = snap.get_edges(1);
-    auto edges_2 = snap.get_edges(2);
+    auto edges_0 = edge_values(snap, 0);
+    auto edges_1 = edge_values(snap, 1);
+    auto edges_2 = edge_values(snap, 2);
     
     bool has_0_1 = false, has_1_2 = false;
     for (const auto& e : edges_0) if (e.to == 1) has_0_1 = true;
@@ -164,14 +172,14 @@ TEST(TemporalGraphTest, SnapshotAtWithDuration) {
     g.add_edge(1, 2, 200, 1, 0);
     
     Graph snap = g.snapshot_at(130);
-    auto edges_0 = snap.get_edges(0);
+    auto edges_0 = edge_values(snap, 0);
     
     bool has_0_1 = false;
     for (const auto& e : edges_0) if (e.to == 1) has_0_1 = true;
     EXPECT_TRUE(has_0_1);
     
     Graph snap2 = g.snapshot_at(160);
-    auto edges2_0 = snap2.get_edges(0);
+    auto edges2_0 = edge_values(snap2, 0);
     bool has_0_1_after = false;
     for (const auto& e : edges2_0) if (e.to == 1) has_0_1_after = true;
     EXPECT_FALSE(has_0_1_after);
@@ -186,10 +194,10 @@ TEST(TemporalGraphTest, SnapshotWindow) {
     
     Graph snap = g.snapshot_window(100, 200);
     
-    auto e0 = snap.get_edges(0);
-    auto e1 = snap.get_edges(1);
-    auto e2 = snap.get_edges(2);
-    auto e3 = snap.get_edges(3);
+    auto e0 = edge_values(snap, 0);
+    auto e1 = edge_values(snap, 1);
+    auto e2 = edge_values(snap, 2);
+    auto e3 = edge_values(snap, 3);
     
     bool has_0_1 = std::any_of(e0.begin(), e0.end(), [](const auto& e) { return e.to == 1; });
     bool has_1_2 = std::any_of(e1.begin(), e1.end(), [](const auto& e) { return e.to == 2; });
@@ -212,7 +220,7 @@ TEST(TemporalGraphTest, SnapshotWindowEmpty) {
     
     int total_edges = 0;
     for (int i = 0; i < 3; ++i) {
-        total_edges += static_cast<int>(snap.get_edges(i).size());
+        total_edges += static_cast<int>(edge_values(snap, i).size());
     }
     EXPECT_EQ(total_edges, 0);
 }
@@ -437,7 +445,7 @@ TEST(TemporalGraphTest, SlidingWindowsAllInOne) {
     if (!windows.empty()) {
         int total_edges = 0;
         for (int i = 0; i < 3; ++i) {
-            total_edges += static_cast<int>(windows[0].get_edges(i).size());
+            total_edges += static_cast<int>(edge_values(windows[0], i).size());
         }
         EXPECT_EQ(total_edges, 3);
     }
@@ -467,7 +475,7 @@ TEST(TemporalGraphTest, AggregateSum) {
     Graph agg = g.aggregate("sum");
     EXPECT_EQ(agg.vertex_count(), 3);
     
-    auto edges_0 = agg.get_edges(0);
+    auto edges_0 = edge_values(agg, 0);
     bool found = false;
     for (const auto& e : edges_0) {
         if (e.to == 1) {
@@ -486,7 +494,7 @@ TEST(TemporalGraphTest, AggregateCount) {
     
     Graph agg = g.aggregate("count");
     
-    auto edges_0 = agg.get_edges(0);
+    auto edges_0 = edge_values(agg, 0);
     bool found = false;
     for (const auto& e : edges_0) {
         if (e.to == 1) {

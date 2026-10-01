@@ -14,7 +14,7 @@ protected:
 TEST_F(DominatorTreeTest, SimpleGraph) {
     // Example from Lengauer-Tarjan paper or standard textbook
     //      0 (R)
-    //     / \
+    //     branches from root
     //    1   2
     //    |   |
     //    3   4
@@ -47,7 +47,7 @@ TEST_F(DominatorTreeTest, SimpleGraph) {
 
 TEST_F(DominatorTreeTest, CrossEdge) {
     //      0
-    //     / \
+    //     branches from root
     //    1-->2
     //    |
     //    3

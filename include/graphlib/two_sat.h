@@ -24,6 +24,8 @@ public:
     // Adds (x_i == val_i)
     void add_implication(int i, bool val_i);
 
+    void add_unit_clause(int i, bool val_i) { add_implication(i, val_i); }
+
     // Solves the 2-SAT problem.
     // Returns true if satisfiable, false otherwise.
     // If satisfiable, 'assignment' is filled with the satisfying assignment (true/false for each variable).
@@ -42,6 +44,10 @@ private:
     std::vector<SimpleEdge> edges_;
 };
 
+}
+
+namespace graphlib {
+using TwoSAT = TwoSat;
 }
 
 #endif

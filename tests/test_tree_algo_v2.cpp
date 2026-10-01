@@ -33,11 +33,7 @@ TEST_F(TreeAlgoV2Test, LCALineGraph) {
 }
 
 TEST_F(TreeAlgoV2Test, LCABinaryTree) {
-    //       0
-    //     /   \
-    //    1     2
-    //   / \   / \
-    //  3   4 5   6
+    // Binary tree: 0 -> (1, 2), 1 -> (3, 4), 2 -> (5, 6)
     int n = 7;
     TreeLCA tree(n);
     tree.add_edge(0, 1); tree.add_edge(0, 2);
@@ -57,13 +53,7 @@ TEST_F(TreeAlgoV2Test, LCABinaryTree) {
 }
 
 TEST_F(TreeAlgoV2Test, HLDPathIntervals) {
-    //       0
-    //      / 
-    //     1   
-    //    / \  
-    //   2   3 
-    //      / \
-    //     4   5
+    // Tree path: 0 -> 1 -> (2, 3), with 3 -> (4, 5)
     int n = 6;
     TreeLCA tree(n);
     tree.add_edge(0, 1);
@@ -92,11 +82,7 @@ TEST_F(TreeAlgoV2Test, HLDPathIntervals) {
 }
 
 TEST_F(TreeAlgoV2Test, HLDSubtree) {
-    //       0
-    //     /   \
-    //    1     2
-    //   / \   
-    //  3   4 
+    // Binary tree: 0 -> (1, 2), and 1 -> (3, 4)
     int n = 5;
     TreeLCA tree(n);
     tree.add_edge(0, 1); tree.add_edge(0, 2);

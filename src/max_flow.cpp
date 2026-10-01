@@ -28,7 +28,7 @@ MaxFlow::Edge::Edge(int to_vertex, long long capacity, long long edge_cost)
     : to(to_vertex), cap(capacity), cost(edge_cost), rev(nullptr), next(nullptr) {}
 
 MaxFlow::MaxFlow(int n) : n_(n) {
-    if (n < 0) throw std::invalid_argument("Number of vertices must be non-negative");
+    if (n <= 0) throw std::invalid_argument("Number of vertices must be positive");
     graph_ = new Edge*[n];
     for(int i=0; i<n; ++i) graph_[i] = nullptr;
     level_ = new int[n];

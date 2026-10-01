@@ -143,6 +143,59 @@ long long GeneralMatching::maximum_weight_matching() {
         return 0;
     }
 
+    if (n <= 20) {
+        std::vector<std::vector<long long>> weights(n, std::vector<long long>(n, 0));
+        for (int u = 0; u < n; ++u) {
+            for (Edge* e = get_edges(u); e; e = e->next) {
+                if (e->to >= 0 && e->to < n && e->to != u) {
+                    weights[u][e->to] = std::max(weights[u][e->to], e->weight);
+                }
+            }
+        }
+        std::vector<long long> memo(static_cast<std::size_t>(1) << n, 0);
+        std::vector<char> done(static_cast<std::size_t>(1) << n, 0);
+        std::function<long long(unsigned int)> solve_mask = [&](unsigned int mask) -> long long {
+            if (mask == 0) return 0;
+            if (done[mask]) return memo[mask];
+            done[mask] = 1;
+            int u = 0;
+            while ((mask & (1u << u)) == 0) ++u;
+            long long best = solve_mask(mask & ~(1u << u));
+            unsigned int rest = mask & ~(1u << u);
+            for (int v = u + 1; v < n; ++v) {
+                if ((rest & (1u << v)) && weights[u][v] > 0) {
+                    best = std::max(best, weights[u][v] + solve_mask(rest & ~(1u << v)));
+                }
+            }
+            return memo[mask] = best;
+        };
+        unsigned int full_mask = (1u << n) - 1;
+        long long result = solve_mask(full_mask);
+        match_.assign(n, -1);
+        std::function<void(unsigned int)> recover = [&](unsigned int mask) {
+            if (mask == 0) return;
+            int u = 0;
+            while ((mask & (1u << u)) == 0) ++u;
+            unsigned int rest = mask & ~(1u << u);
+            if (solve_mask(mask) == solve_mask(rest)) {
+                recover(rest);
+                return;
+            }
+            for (int v = u + 1; v < n; ++v) {
+                if ((rest & (1u << v)) && weights[u][v] > 0 &&
+                    solve_mask(mask) == weights[u][v] + solve_mask(rest & ~(1u << v))) {
+                    match_[u] = v;
+                    match_[v] = u;
+                    recover(rest & ~(1u << v));
+                    return;
+                }
+            }
+            recover(rest);
+        };
+        recover(full_mask);
+        return result;
+    }
+
     // Determine bias to ensure all relevant weights are positive
     // We use a minimal bias to avoid large numbers, but ensure w > 0.
     long long min_weight = std::numeric_limits<long long>::max();

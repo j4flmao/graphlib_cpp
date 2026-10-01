@@ -412,8 +412,12 @@ std::vector<std::vector<int>> find_all_cycles(const Graph& g, int max_cycles) {
         
         for (int w : adj[v]) {
             if (w == s) {
-                result.push_back(stack);
-                found = true;
+                if (stack.size() >= 3) {
+                    if (max_cycles <= 0 || static_cast<int>(result.size()) < max_cycles) {
+                        result.push_back(stack);
+                    }
+                    found = true;
+                }
             } else if (!blocked[w]) {
                 if (circuit(w, s)) found = true;
             }
@@ -557,7 +561,7 @@ std::vector<int> longest_cycle(const Graph& g) {
                 // Find start of path
                 int start = -1;
                 for (int s = 0; s < n; ++s) {
-                    if ((mask & (1 << s)) && dp[1 << s][s] == 0) {
+                    if ((mask & (1 << s)) && dp[static_cast<std::size_t>(1) << s][s] == 0) {
                         // Check if this was the start
                         int cur_mask = mask;
                         int cur = end;

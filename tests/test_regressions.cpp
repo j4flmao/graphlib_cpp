@@ -9,6 +9,7 @@
 #include <vector>
 
 using graphlib::DirectedEdge;
+using graphlib::Graph;
 using graphlib::MaxFlow;
 
 TEST(RegressionFlowTest, RejectsEqualTerminalsAcrossAlgorithms) {

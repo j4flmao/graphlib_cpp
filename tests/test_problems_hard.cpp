@@ -167,7 +167,6 @@ TEST(MaxCliqueTest, EmptyGraph) {
 }
 
 TEST(MaxCliqueTest, ZeroNodes) {
-    EXPECT_THROW({
-        Graph g(0, false);
-    }, std::invalid_argument);
+    Graph g(0, false);
+    EXPECT_EQ(max_clique_bron_kerbosch(g), 0);
 }

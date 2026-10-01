@@ -25,10 +25,8 @@ TEST(Robustness, GraphNegativeVertices) {
 }
 
 TEST(Robustness, ZeroVertices) {
-    // Graph constructor throws invalid_argument for n <= 0
-    EXPECT_THROW({
-        Graph g(0);
-    }, std::invalid_argument);
+    Graph g(0);
+    EXPECT_EQ(g.vertex_count(), 0);
 }
 
 TEST(Robustness, LargeGraph) {

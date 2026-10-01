@@ -10,11 +10,7 @@ protected:
     
     void SetUp() override {
         // Create a tree:
-        //      0
-        //     / \
-        //    1   2
-        //   /|   |
-        //  3 4   5
+        // Tree path: 0 -> (1, 2), 1 -> (3, 4), 2 -> 5
         tree = std::make_unique<TreeLCA>(6);
         tree->add_edge(0, 1);
         tree->add_edge(0, 2);

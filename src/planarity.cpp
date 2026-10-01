@@ -161,6 +161,8 @@ bool is_planar(const Graph& g) {
 std::vector<std::vector<int>> get_planar_faces(const Graph& g) {
     int n = g.vertex_count();
     if (n == 0) return {};
+    auto forbidden_adjacency = undirected_adjacency(g);
+    if (contains_k5(forbidden_adjacency) || contains_k33(forbidden_adjacency)) return {};
     
     // Count edges and build adjacency
     int m = 0;

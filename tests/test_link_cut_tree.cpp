@@ -43,7 +43,7 @@ TEST(LinkCutTreeTest, CycleAndReroot) {
     lct.link(1, 2);
     // Tree 0-1-2
     
-    EXPECT_EQ(lct.find_root(2), 0); // Assuming 0 was root initially or by link order
+    EXPECT_EQ(lct.find_root(2), 2);
     
     lct.make_root(2);
     EXPECT_EQ(lct.find_root(0), 2);

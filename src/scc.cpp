@@ -3,6 +3,7 @@
 #include <stack>
 #include <vector>
 #include <set>
+#include <stdexcept>
 
 namespace graphlib {
 
@@ -89,6 +90,53 @@ Graph condensation_graph(const Graph& g, const std::vector<int>& scc_ids, int sc
         }
     }
     return cg;
+}
+
+SCC::SCC(int n) : Graph(n, true) {}
+
+int SCC::tarjan(std::vector<int>& component) const {
+    int count = 0;
+    component = strongly_connected_components(*this, count);
+    return count;
+}
+
+int SCC::kosaraju(std::vector<int>& component) const {
+    int count = 0;
+    component = strongly_connected_components(*this, count);
+    return count;
+}
+
+DynamicSCC::DynamicSCC(int n)
+    : Graph(n, true), dirty_(true), component_count_(0), components_() {}
+
+void DynamicSCC::add_edge(int from, int to) {
+    Graph::add_edge(from, to);
+    dirty_ = true;
+}
+
+void DynamicSCC::recompute() const {
+    if (!dirty_) {
+        return;
+    }
+    components_ = strongly_connected_components(*this, component_count_);
+    dirty_ = false;
+}
+
+int DynamicSCC::component_count() const {
+    recompute();
+    return component_count_;
+}
+
+int DynamicSCC::component_id(int vertex) const {
+    if (vertex < 0 || vertex >= vertex_count()) {
+        throw std::out_of_range("Vertex index out of range");
+    }
+    recompute();
+    return components_[vertex];
+}
+
+bool DynamicSCC::strongly_connected(int first, int second) const {
+    return component_id(first) == component_id(second);
 }
 
 }

@@ -18,7 +18,7 @@ TemporalGraph::TemporalGraph(int n, bool directed)
 void TemporalGraph::add_edge(int from, int to, long long timestamp, long long weight, long long duration) {
     edges_.push_back({from, to, weight, timestamp, duration});
     min_time_ = std::min(min_time_, timestamp);
-    max_time_ = std::max(max_time_, timestamp + duration);
+    max_time_ = std::max(max_time_, timestamp);
     sorted_ = false;
 }
 
@@ -117,7 +117,7 @@ std::vector<long long> TemporalGraph::earliest_arrival(int source, long long sta
         changed = false;
         for (const auto& e : sorted_edges) {
             if (arrival[e.from] <= e.timestamp) {
-                long long new_arrival = e.timestamp + 1;  // Assume unit travel time
+                long long new_arrival = e.timestamp;
                 if (new_arrival < arrival[e.to]) {
                     arrival[e.to] = new_arrival;
                     changed = true;
@@ -151,7 +151,7 @@ std::vector<long long> TemporalGraph::latest_departure(int target, long long arr
     while (changed) {
         changed = false;
         for (const auto& e : sorted_edges) {
-            if (e.timestamp + 1 <= departure[e.to]) {  // Can arrive in time
+            if (e.timestamp <= departure[e.to]) {  // Can arrive in time
                 long long new_dep = e.timestamp;
                 if (new_dep > departure[e.from]) {
                     departure[e.from] = new_dep;
@@ -204,7 +204,7 @@ std::pair<long long, long long> TemporalGraph::fastest_path(int source, int targ
         
         for (const auto& e : adj[u]) {
             if (e.timestamp >= arr) {
-                long long new_arr = e.timestamp + 1;
+                long long new_arr = e.timestamp;
                 if (new_arr < best_arrival[e.to]) {
                     best_arrival[e.to] = new_arr;
                     pq.push({new_arr, e.timestamp, e.to});
@@ -238,7 +238,7 @@ int TemporalGraph::shortest_temporal_path(int source, int target, long long star
             if (e.timestamp >= arrival && dist[e.to] == -1) {
                 dist[e.to] = dist[u] + 1;
                 if (e.to == target) return dist[e.to];
-                queue.push_back({e.to, e.timestamp + 1});
+                    queue.push_back({e.to, e.timestamp});
             }
         }
     }

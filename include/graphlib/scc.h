@@ -18,6 +18,31 @@ GRAPHLIB_API std::vector<int> strongly_connected_components(const Graph& g, int&
 // Duplicate edges are removed.
 GRAPHLIB_API Graph condensation_graph(const Graph& g, const std::vector<int>& scc_ids, int scc_count);
 
+class GRAPHLIB_API SCC : public Graph {
+public:
+    explicit SCC(int n);
+
+    int tarjan(std::vector<int>& component) const;
+    int kosaraju(std::vector<int>& component) const;
+};
+
+class GRAPHLIB_API DynamicSCC : public Graph {
+public:
+    explicit DynamicSCC(int n);
+
+    void add_edge(int from, int to);
+    int component_count() const;
+    int component_id(int vertex) const;
+    bool strongly_connected(int first, int second) const;
+
+private:
+    mutable bool dirty_;
+    mutable int component_count_;
+    mutable std::vector<int> components_;
+
+    void recompute() const;
+};
+
 }
 
 #endif

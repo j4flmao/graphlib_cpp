@@ -14,11 +14,8 @@ using namespace graphlib;
 // ============================================================================
 
 TEST(CornerCases, EmptyGraph) {
-    // If n=0 is not allowed by constructor, we expect it to throw.
-    // "Number of vertices must be positive" is the message.
-    EXPECT_THROW({
-        Graph g(0, false);
-    }, std::exception); // Catch generic exception or string check
+    Graph g(0, false);
+    EXPECT_TRUE(is_planar(g));
 }
 
 TEST(CornerCases, SingleNodeGraph) {

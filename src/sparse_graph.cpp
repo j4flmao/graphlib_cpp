@@ -12,11 +12,7 @@ CSRGraph::CSRGraph() : n_(0), m_(0), directed_(true) {}
 CSRGraph::CSRGraph(int n, const std::vector<std::tuple<int, int, long long>>& edges, bool directed)
     : n_(n), directed_(directed) {
     
-    if (directed) {
-        m_ = static_cast<int>(edges.size());
-    } else {
-        m_ = static_cast<int>(edges.size()) * 2;
-    }
+    m_ = static_cast<int>(edges.size());
     
     row_ptr_.resize(n + 1, 0);
     col_idx_.reserve(m_);
@@ -147,11 +143,7 @@ CSCGraph::CSCGraph() : n_(0), m_(0), directed_(true) {}
 CSCGraph::CSCGraph(int n, const std::vector<std::tuple<int, int, long long>>& edges, bool directed)
     : n_(n), directed_(directed) {
     
-    if (directed) {
-        m_ = static_cast<int>(edges.size());
-    } else {
-        m_ = static_cast<int>(edges.size()) * 2;
-    }
+    m_ = static_cast<int>(edges.size());
     
     col_ptr_.resize(n + 1, 0);
     

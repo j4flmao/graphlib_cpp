@@ -139,7 +139,7 @@ TEST_F(InvariantsExtendedTest, MSTCutProperty) {
             
             bool found = false;
             int head = 0;
-            while(head < q.size()) {
+            while(static_cast<std::size_t>(head) < q.size()) {
                 int curr = q[head++];
                 if (curr == e.v) { found = true; break; }
                 
