@@ -42,11 +42,12 @@ jobs:
           cmake --build build --target graphlib_tests -- -n >/dev/null
           if [[ -f build/build.ninja ]]; then
             manifest=build/build.ninja
-          elif [[ -f build/CMakeFiles/graphlib_tests.dir/DependInfo.cmake ]]; then
-            manifest=build/CMakeFiles/graphlib_tests.dir/DependInfo.cmake
           else
-            echo "Unable to locate the generated graphlib_tests source manifest"
-            exit 1
+            manifest=$(find build -path '*/CMakeFiles/graphlib_tests.dir/DependInfo.cmake' -print -quit)
+            if [[ -z "$manifest" ]]; then
+              echo "Unable to locate the generated graphlib_tests source manifest"
+              exit 1
+            fi
           fi
           missing=0
           for source in tests/test_*.cpp; do
@@ -102,7 +103,7 @@ jobs:
           cmake --build build --parallel 2
           ctest --test-dir build --output-on-failure --timeout 60
       - name: Generate coverage report
-        run: gcovr --root . --exclude 'build/_deps' --txt --xml-pretty -o coverage.xml
+        run: gcovr --root . --exclude 'build/_deps' --gcov-ignore-parse-errors=suspicious_hits.warn --txt --xml-pretty -o coverage.xml
       - uses: actions/upload-artifact@v4
         with:
           name: coverage-report

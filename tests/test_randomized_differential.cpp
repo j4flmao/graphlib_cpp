@@ -10,6 +10,7 @@
 #include <set>
 #include <vector>
 #include <algorithm>
+#include <functional>
 #include <iostream>
 
 using namespace graphlib;
@@ -297,30 +298,31 @@ TEST_F(RandomizedTest, GeneralMatchingSmallBruteForce) {
         
         int algo_result = gm.maximum_matching();
         
-        // Brute force max matching
-        int max_match = 0;
-        int num_edges = edges.size();
-        for (int i = 0; i < (1 << num_edges); ++i) {
-            int current_match = 0;
-            int mask = 0;
-            bool valid = true;
-            for (int j = 0; j < num_edges; ++j) {
-                if ((i >> j) & 1) {
-                    int u = edges[j].first;
-                    int v = edges[j].second;
-                    if ((mask & (1 << u)) || (mask & (1 << v))) {
-                        valid = false;
-                        break;
-                    }
-                    mask |= (1 << u);
-                    mask |= (1 << v);
-                    current_match++;
-                }
-            }
-            if (valid) {
-                max_match = std::max(max_match, current_match);
-            }
+        // Exact vertex-subset DP avoids enumerating up to 2^28 edge subsets
+        // and keeps this oracle fast under sanitizers.
+        std::vector<unsigned int> adjacency(n, 0);
+        for (const auto& edge : edges) {
+            adjacency[edge.first] |= 1u << edge.second;
+            adjacency[edge.second] |= 1u << edge.first;
         }
+        std::vector<int> brute(1u << n, -1);
+        std::function<int(unsigned int)> solve = [&](unsigned int mask) {
+            if (mask == 0) return 0;
+            int& cached = brute[mask];
+            if (cached != -1) return cached;
+            int u = 0;
+            while ((mask & (1u << u)) == 0) ++u;
+            unsigned int rest = mask & ~(1u << u);
+            int best = solve(rest);
+            unsigned int neighbors = adjacency[u] & rest;
+            while (neighbors != 0) {
+                unsigned int bit = neighbors & (~neighbors + 1u);
+                best = std::max(best, 1 + solve(rest & ~bit));
+                neighbors &= neighbors - 1u;
+            }
+            return cached = best;
+        };
+        const int max_match = solve((1u << n) - 1u);
         
         ASSERT_EQ(algo_result, max_match) << "Matching size mismatch at test " << t;
     }

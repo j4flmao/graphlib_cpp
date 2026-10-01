@@ -29,7 +29,7 @@ int GeneralMatching::maximum_matching() {
     // Use an exact recurrence for small graphs.  Besides being inexpensive in
     // this range, it provides deterministic matching results for the small
     // instances commonly used by callers to validate larger algorithms.
-    if (n <= 20) {
+    if (n <= 12) {
         const std::size_t state_count = static_cast<std::size_t>(1) << n;
         std::vector<int> memo(state_count, -1);
         std::function<int(unsigned int)> solve = [&](unsigned int mask) -> int {
