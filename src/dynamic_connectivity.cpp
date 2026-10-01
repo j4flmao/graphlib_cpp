@@ -5,7 +5,7 @@
 namespace graphlib {
 
 DynamicConnectivity::DynamicConnectivity(int n) 
-    : n_(n), dsu_(n), time_steps_(0) {
+    : dsu_(n), time_steps_(0) {
 }
 
 void DynamicConnectivity::add_edge(int u, int v) {

@@ -120,6 +120,18 @@ void Graph::add_edge(int from, int to, long long weight) {
     }
 }
 
+bool Graph::has_edge(int from, int to) const {
+    if (from < 0 || from >= n_ || to < 0 || to >= n_) {
+        throw std::out_of_range("Vertex index out of range");
+    }
+    for (Edge* edge = adj_[from]; edge; edge = edge->next) {
+        if (edge->to == to) {
+            return true;
+        }
+    }
+    return false;
+}
+
 Graph make_complete_graph(int n, bool directed) {
     Graph g(n, directed);
     if (directed) {

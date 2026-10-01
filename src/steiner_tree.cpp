@@ -17,14 +17,14 @@ long long steiner_tree(const Graph& g, const std::vector<int>& terminals) {
     // where v is part of the tree.
     // Initialize with infinity
     const long long INF = std::numeric_limits<long long>::max() / 2;
-    std::vector<std::vector<long long>> dp(1 << k, std::vector<long long>(n, INF));
+    std::vector<std::vector<long long>> dp(static_cast<std::size_t>(1) << k, std::vector<long long>(n, INF));
 
     // Base cases: terminals themselves
     for (int i = 0; i < k; ++i) {
-        dp[1 << i][terminals[i]] = 0;
+        dp[static_cast<std::size_t>(1) << i][terminals[i]] = 0;
     }
 
-    for (int mask = 1; mask < (1 << k); ++mask) {
+    for (int mask = 1; mask < static_cast<int>(static_cast<std::size_t>(1) << k); ++mask) {
         // 1. Combine submasks
         for (int v = 0; v < n; ++v) {
             for (int submask = (mask - 1) & mask; submask > 0; submask = (submask - 1) & mask) {
@@ -70,7 +70,7 @@ long long steiner_tree(const Graph& g, const std::vector<int>& terminals) {
     long long ans = INF;
     // The answer is min(dp[(1<<k)-1][v]) for any v
     for (int v = 0; v < n; ++v) {
-        ans = std::min(ans, dp[(1 << k) - 1][v]);
+        ans = std::min(ans, dp[(static_cast<std::size_t>(1) << k) - 1][v]);
     }
 
     return (ans == INF) ? -1 : ans;

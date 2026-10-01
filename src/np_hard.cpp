@@ -1013,13 +1013,13 @@ namespace {
     
     std::vector<int> find_hamiltonian_path_bitmask(const std::vector<std::vector<bool>>& adj, int n) {
         // dp[mask][v] = true if there's a path visiting vertices in mask ending at v
-        std::vector<std::vector<bool>> dp(1 << n, std::vector<bool>(n, false));
+        std::vector<std::vector<bool>> dp(static_cast<std::size_t>(1) << n, std::vector<bool>(n, false));
         // parent[mask][v] = {prev_mask, prev_v} for path reconstruction
-        std::vector<std::vector<std::pair<int, int>>> parent(1 << n, std::vector<std::pair<int, int>>(n, {-1, -1}));
+        std::vector<std::vector<std::pair<int, int>>> parent(static_cast<std::size_t>(1) << n, std::vector<std::pair<int, int>>(n, {-1, -1}));
         
         // Initialize: single vertex paths
         for (int v = 0; v < n; ++v) {
-            dp[1 << v][v] = true;
+            dp[static_cast<std::size_t>(1) << v][v] = true;
         }
         
         // Fill DP table
@@ -1040,7 +1040,7 @@ namespace {
         }
         
         // Check if full path exists and reconstruct
-        int full_mask = (1 << n) - 1;
+        int full_mask = static_cast<int>((static_cast<std::size_t>(1) << n) - 1);
         for (int v = 0; v < n; ++v) {
             if (dp[full_mask][v]) {
                 // Reconstruct path
@@ -1082,10 +1082,10 @@ bool has_hamiltonian_path(const Graph& g) {
     
     if (n <= 20) {
         // Use bitmask DP - just check existence
-        std::vector<std::vector<bool>> dp(1 << n, std::vector<bool>(n, false));
+        std::vector<std::vector<bool>> dp(static_cast<std::size_t>(1) << n, std::vector<bool>(n, false));
         
         for (int v = 0; v < n; ++v) {
-            dp[1 << v][v] = true;
+            dp[static_cast<std::size_t>(1) << v][v] = true;
         }
         
         for (int mask = 1; mask < (1 << n); ++mask) {

@@ -38,6 +38,8 @@ public:
 
     void add_edge(int from, int to, long long weight = 1);
     int vertex_count() const { return n_; }
+    int num_vertices() const { return n_; }
+    bool has_edge(int from, int to) const;
     bool is_directed() const { return directed_; }
 
     Edge* get_edges(int vertex) const { return adj_[vertex]; }

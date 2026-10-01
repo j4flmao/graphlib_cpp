@@ -503,9 +503,9 @@ std::vector<int> longest_cycle(const Graph& g) {
     
     if (n <= 20) {
         // Exact algorithm using bitmask DP (Hamiltonian path variant)
-        const long long INF = 1e18;
-        std::vector<std::vector<long long>> dp(1 << n, std::vector<long long>(n, INF));
-        std::vector<std::vector<int>> parent(1 << n, std::vector<int>(n, -1));
+        constexpr long long INF = 1000000000000000000LL;
+        std::vector<std::vector<long long>> dp(static_cast<std::size_t>(1) << n, std::vector<long long>(n, INF));
+        std::vector<std::vector<int>> parent(static_cast<std::size_t>(1) << n, std::vector<int>(n, -1));
         
         // Build adjacency
         std::vector<std::vector<bool>> adj(n, std::vector<bool>(n, false));
@@ -517,7 +517,7 @@ std::vector<int> longest_cycle(const Graph& g) {
         
         // Initialize
         for (int i = 0; i < n; ++i) {
-            dp[1 << i][i] = 0;
+            dp[static_cast<std::size_t>(1) << i][i] = 0;
         }
         
         // DP

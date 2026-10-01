@@ -17,7 +17,6 @@ namespace graphlib {
 
 class GRAPHLIB_API DynamicConnectivity {
 private:
-    int n_;
     DsuRollback dsu_;
     
     struct Query {

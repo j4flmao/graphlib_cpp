@@ -114,7 +114,6 @@ TEST_F(ComprehensiveFinalTest, AStarGrid) {
 
     // Heuristic: Manhattan distance * 10
     std::vector<long long> h(n);
-    int target = 8;
     int tx = 2, ty = 2;
     for(int i=0; i<n; ++i) {
         int x = i % 3;
