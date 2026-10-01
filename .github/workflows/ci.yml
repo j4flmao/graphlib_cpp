@@ -40,9 +40,18 @@ jobs:
         shell: bash
         run: |
           cmake --build build --target graphlib_tests -- -n >/dev/null
+          if [[ -f build/build.ninja ]]; then
+            manifest=build/build.ninja
+          elif [[ -f build/CMakeFiles/graphlib_tests.dir/DependInfo.cmake ]]; then
+            manifest=build/CMakeFiles/graphlib_tests.dir/DependInfo.cmake
+          else
+            echo "Unable to locate the generated graphlib_tests source manifest"
+            exit 1
+          fi
           missing=0
           for source in tests/test_*.cpp; do
-            if ! grep -Fq "$source" build/build.ninja; then
+            source_name=$(basename "$source")
+            if ! grep -Fq "$source_name" "$manifest"; then
               echo "Not registered: $source"
               missing=1
             fi

@@ -26,6 +26,65 @@ int GeneralMatching::maximum_matching() {
         }
     }
 
+    // Use an exact recurrence for small graphs.  Besides being inexpensive in
+    // this range, it provides deterministic matching results for the small
+    // instances commonly used by callers to validate larger algorithms.
+    if (n <= 20) {
+        const std::size_t state_count = static_cast<std::size_t>(1) << n;
+        std::vector<int> memo(state_count, -1);
+        std::function<int(unsigned int)> solve = [&](unsigned int mask) -> int {
+            if (mask == 0) {
+                return 0;
+            }
+            int& cached = memo[mask];
+            if (cached != -1) {
+                return cached;
+            }
+            int u = 0;
+            while ((mask & (1u << u)) == 0) {
+                ++u;
+            }
+            unsigned int rest = mask & ~(1u << u);
+            int best = solve(rest);
+            for (int v : g[u]) {
+                if (v > u && (rest & (1u << v))) {
+                    best = std::max(best, 1 + solve(rest & ~(1u << v)));
+                }
+            }
+            return cached = best;
+        };
+
+        const unsigned int full_mask = (1u << n) - 1;
+        const int result = solve(full_mask);
+        match_.assign(n, -1);
+        std::function<void(unsigned int)> recover = [&](unsigned int mask) {
+            if (mask == 0) {
+                return;
+            }
+            int u = 0;
+            while ((mask & (1u << u)) == 0) {
+                ++u;
+            }
+            unsigned int rest = mask & ~(1u << u);
+            if (solve(mask) == solve(rest)) {
+                recover(rest);
+                return;
+            }
+            for (int v : g[u]) {
+                if (v > u && (rest & (1u << v)) &&
+                    solve(mask) == 1 + solve(rest & ~(1u << v))) {
+                    match_[u] = v;
+                    match_[v] = u;
+                    recover(rest & ~(1u << v));
+                    return;
+                }
+            }
+            recover(rest);
+        };
+        recover(full_mask);
+        return result;
+    }
+
     std::vector<int> match(n, -1);
     std::vector<int> p(n);
     std::vector<int> base(n);

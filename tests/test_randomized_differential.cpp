@@ -282,13 +282,17 @@ TEST_F(RandomizedTest, GeneralMatchingSmallBruteForce) {
         std::vector<std::pair<int, int>> edges;
         
         int m = rand_int(0, n * (n - 1) / 2);
-        for (int i = 0; i < m; ++i) {
+        std::set<std::pair<int, int>> unique_edges;
+        while (static_cast<int>(unique_edges.size()) < m) {
             int u = rand_int(0, n - 1);
             int v = rand_int(0, n - 1);
             if (u != v) {
-                gm.add_edge(u, v);
-                edges.push_back({std::min(u, v), std::max(u, v)});
+                unique_edges.insert({std::min(u, v), std::max(u, v)});
             }
+        }
+        for (const auto& edge : unique_edges) {
+            gm.add_edge(edge.first, edge.second);
+            edges.push_back(edge);
         }
         
         int algo_result = gm.maximum_matching();
