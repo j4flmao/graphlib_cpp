@@ -108,12 +108,13 @@ TEST(DAGAdvancedTest, SCCCondensationStructure) {
 // -----------------------------------------------------------------------------
 
 TEST(TreeAdvancedTest, SubtreeQueries) {
-    // Tree:
-    //      0
-    //     / \
-    //    1   2
-    //   / \
-    //  3   4
+    /* Tree:
+           0
+          / \
+         1   2
+        / \
+       3   4
+    */
     
     TreeLCA tree(5);
     tree.add_edge(0, 1);
@@ -209,7 +210,7 @@ TEST(TreeAdvancedTest, StressSubtreeAndPath) {
             // BFS/DFS to find subtree sum
             std::vector<int> q = {u};
             int head = 0;
-            while(head < q.size()) {
+            while(head < static_cast<int>(q.size())) {
                 int curr = q[head++];
                 expected += values[curr];
                 // Children? Need to check all nodes
